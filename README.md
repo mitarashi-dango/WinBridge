@@ -39,6 +39,33 @@ dotnet run -c Release
 
 ビルド済みアプリは通常 `bin\Release\net8.0-windows10.0.22621.0\win-x64\WinBridge.exe` から起動できます。
 
+## 配布パッケージ
+
+Inno Setup 6または7をインストールしたWindows環境では、次のコマンドでポータブル版ZIP、ユーザー単位インストーラー、SHA-256一覧を同時に生成できます。
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\package-release.ps1 -Version 1.0.0
+```
+
+成果物はプロジェクト直下の `WinBridge-release-v1.0.0` に作成されます。
+
+```text
+WinBridge-v1.0.0-win-x64-portable.zip
+WinBridge-v1.0.0-win-x64-Setup.exe
+SHA256SUMS.txt
+```
+
+インストーラーは管理者権限を要求せず、`%LOCALAPPDATA%\Programs\WinBridge` にインストールします。スタートメニューとWindowsの「インストールされているアプリ」に登録され、アンインストーラーも作成されます。アプリ設定とログはアンインストール後も `%LOCALAPPDATA%\WinBridge` に残ります。
+
+ダウンロード後の整合性は次のように確認できます。
+
+```powershell
+Get-FileHash .\WinBridge-v1.0.0-win-x64-portable.zip -Algorithm SHA256
+Get-FileHash .\WinBridge-v1.0.0-win-x64-Setup.exe -Algorithm SHA256
+```
+
+表示された値がGitHub Releaseに添付された `SHA256SUMS.txt` と一致することを確認してください。現在の配布物はコード署名されていないため、Windows Defender SmartScreenの警告が表示される場合があります。
+
 ## 自動テスト
 
 外部テストライブラリに依存しない自動テストを同梱しています。

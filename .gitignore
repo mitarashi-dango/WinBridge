@@ -5,5 +5,7 @@ artifacts/
 **/obj/
 .codex-manual-cache/
 WinBridge-win-x64-portable/
+WinBridge-release-v*/
 Gemini_Generated_Image_*.png
+.tools/
 *.user
