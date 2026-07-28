@@ -85,14 +85,39 @@ public partial class App : Application
 
     private static void RestoreWindow(Window window, Models.AppSettings settings)
     {
-        if (settings.WindowWidth >= 760) window.Width = settings.WindowWidth;
-        if (settings.WindowHeight >= 520) window.Height = settings.WindowHeight;
-        if (settings.WindowLeft is double left && settings.WindowTop is double top)
+        var visibleArea = new Rect(
+            SystemParameters.VirtualScreenLeft,
+            SystemParameters.VirtualScreenTop,
+            SystemParameters.VirtualScreenWidth,
+            SystemParameters.VirtualScreenHeight);
+
+        if (double.IsFinite(settings.WindowWidth) && settings.WindowWidth >= 760)
+            window.Width = Math.Min(settings.WindowWidth, visibleArea.Width);
+        if (double.IsFinite(settings.WindowHeight) && settings.WindowHeight >= 520)
+            window.Height = Math.Min(settings.WindowHeight, visibleArea.Height);
+        if (settings.WindowLeft is double left && settings.WindowTop is double top &&
+            double.IsFinite(left) && double.IsFinite(top))
         {
+            var restored = ClampToVisibleArea(
+                new Rect(left, top, window.Width, window.Height), visibleArea);
             window.WindowStartupLocation = WindowStartupLocation.Manual;
-            window.Left = left;
-            window.Top = top;
+            window.Left = restored.Left;
+            window.Top = restored.Top;
         }
+    }
+
+    internal static Rect ClampToVisibleArea(Rect desired, Rect visibleArea)
+    {
+        if (visibleArea.IsEmpty || visibleArea.Width <= 0 || visibleArea.Height <= 0)
+            return desired;
+
+        var width = Math.Min(desired.Width, visibleArea.Width);
+        var height = Math.Min(desired.Height, visibleArea.Height);
+        var maxLeft = Math.Max(visibleArea.Left, visibleArea.Right - width);
+        var maxTop = Math.Max(visibleArea.Top, visibleArea.Bottom - height);
+        var left = Math.Clamp(desired.Left, visibleArea.Left, maxLeft);
+        var top = Math.Clamp(desired.Top, visibleArea.Top, maxTop);
+        return new Rect(left, top, width, height);
     }
 
     private static void ActivateMainWindow(Window window)

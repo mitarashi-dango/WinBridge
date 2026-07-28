@@ -1,7 +1,10 @@
 [CmdletBinding()]
 param(
-    [string]$Version = "1.0.0",
-    [string]$IsccPath
+    [string]$Version = "1.1.0",
+    [string]$IsccPath,
+    [string]$SigningCertificateThumbprint,
+    [string]$TimestampServer = "http://timestamp.digicert.com",
+    [switch]$AllowUnsigned
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,6 +20,53 @@ $setupBaseName = "WinBridge-v$Version-win-x64-Setup"
 $portablePath = Join-Path $outputDirectory $portableName
 $setupPath = Join-Path $outputDirectory "$setupBaseName.exe"
 $checksumsPath = Join-Path $outputDirectory "SHA256SUMS.txt"
+
+function Get-CodeSigningCertificate {
+    if ([string]::IsNullOrWhiteSpace($SigningCertificateThumbprint)) {
+        if ($AllowUnsigned) {
+            Write-Host "Code signing was skipped by request."
+            return $null
+        }
+        throw "A trusted code-signing certificate is required. Pass -SigningCertificateThumbprint or explicitly use -AllowUnsigned."
+    }
+
+    $thumbprint = $SigningCertificateThumbprint.Replace(" ", "")
+    $certificate = Get-Item -LiteralPath "Cert:\CurrentUser\My\$thumbprint" -ErrorAction SilentlyContinue
+    if ($null -eq $certificate) {
+        throw "The code-signing certificate was not found in Cert:\CurrentUser\My: $thumbprint"
+    }
+    if (-not $certificate.HasPrivateKey) {
+        throw "The code-signing certificate does not have an accessible private key: $thumbprint"
+    }
+    if ($certificate.NotAfter -le (Get-Date)) {
+        throw "The code-signing certificate has expired: $thumbprint"
+    }
+    $codeSigningOid = "1.3.6.1.5.5.7.3.3"
+    if (-not ($certificate.EnhancedKeyUsageList.ObjectId.Value -contains $codeSigningOid)) {
+        throw "The selected certificate is not valid for code signing: $thumbprint"
+    }
+    return $certificate
+}
+
+function Set-ReleaseSignature {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Path,
+        [Parameter(Mandatory)]
+        [System.Security.Cryptography.X509Certificates.X509Certificate2]$Certificate
+    )
+
+    $signature = Set-AuthenticodeSignature `
+        -LiteralPath $Path `
+        -Certificate $Certificate `
+        -HashAlgorithm SHA256 `
+        -TimestampServer $TimestampServer
+    if ($signature.Status -ne [System.Management.Automation.SignatureStatus]::Valid) {
+        throw "Authenticode signing failed for '$Path': $($signature.Status) $($signature.StatusMessage)"
+    }
+}
+
+$signingCertificate = Get-CodeSigningCertificate
 
 if ([string]::IsNullOrWhiteSpace($IsccPath)) {
     $candidates = @(
@@ -55,6 +105,11 @@ try {
         throw "dotnet publish failed with exit code $LASTEXITCODE."
     }
 
+    $publishedExecutable = Join-Path $publishDirectory "WinBridge.exe"
+    if ($null -ne $signingCertificate) {
+        Set-ReleaseSignature -Path $publishedExecutable -Certificate $signingCertificate
+    }
+
     Compress-Archive -Path (Join-Path $publishDirectory "*") -DestinationPath $portablePath -CompressionLevel Optimal
 
     & $IsccPath `
@@ -69,6 +124,10 @@ try {
 
     if (-not (Test-Path -LiteralPath $setupPath)) {
         throw "Installer was not created at the expected path: $setupPath"
+    }
+
+    if ($null -ne $signingCertificate) {
+        Set-ReleaseSignature -Path $setupPath -Certificate $signingCertificate
     }
 
     $checksumLines = foreach ($artifactPath in @($portablePath, $setupPath)) {

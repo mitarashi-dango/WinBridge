@@ -18,10 +18,14 @@ var tests = new (string Name, Func<Task> Run)[]
     ("デバイスページの設定を追加・解除できる", TestDevicePageSettingsAsync),
     ("全機能を非表示にしてデバイスと接続を再表示できる", TestModuleVisibilityAsync),
     ("お好み電源プリセットを保存して再利用できる", TestCustomPowerPresetAsync),
+    ("電源設定の途中失敗時に変更前の値へ戻せる", TestPowerRollbackAsync),
     ("画面起動先が確認済みURIだけを持つ", TestApprovedLaunchTargetsAsync),
     ("Windows画面の起動引数を分離できる", TestLauncherArgumentsAsync),
     ("設定URI以外をランチャーで拒否する", TestLauncherTargetValidationAsync),
+    ("Windows標準コマンドをSystem32から起動する", TestSystemExecutableResolutionAsync),
     ("Windowsコマンドをタイムアウトできる", TestCommandTimeoutAsync),
+    ("画面外のウィンドウ位置を表示領域へ戻せる", TestWindowBoundsAsync),
+    ("配布設定がWindows 11・多言語・署名必須になっている", TestReleaseHardeningAsync),
     ("入れ子リストのマウスホイールをページへ転送する", TestNestedScrollRoutingAsync),
     ("画面文言に英語リソースの漏れがない", TestXamlTranslationsAsync),
     ("2個目の起動から既存起動へ通知できる", TestSingleInstanceAsync),
@@ -420,6 +424,43 @@ static async Task TestCustomPowerPresetAsync()
     }
 }
 
+static async Task TestPowerRollbackAsync()
+{
+    var directory = CreateTemporaryDirectory();
+    try
+    {
+        var calls = new List<string[]>();
+        Task<OperationResult<string>> Run(string fileName, string[] arguments)
+        {
+            calls.Add([.. arguments]);
+            if (arguments[0] == "-query")
+                return Task.FromResult(OperationResult<string>.Success(
+                    "AC 0x00000258 DC 0x0000012c"));
+            if (arguments.SequenceEqual(["-change", "-standby-timeout-ac", "30"]))
+                return Task.FromResult(OperationResult<string>.Failure("テスト用の変更失敗"));
+            return Task.FromResult(OperationResult<string>.Success(""));
+        }
+
+        var logger = new LoggingService(Path.Combine(directory, "logs"));
+        var service = new PowerSettingsService(logger, Run);
+        var result = await service.ApplyAsync(new PowerSettings(
+            false, 15, 30, 10, 30));
+
+        Assert(!result.IsSuccess, "途中で失敗した電源設定が成功扱いになっています。");
+        Assert(result.UserMessage.Contains("変更前の値へ戻しました", StringComparison.Ordinal),
+            "電源設定を元へ戻したことが通知されていません。");
+        Assert(calls.Any(call =>
+                call.SequenceEqual(["-change", "-monitor-timeout-ac", "15"])),
+            "最初の電源設定変更が実行されていません。");
+        Assert(calls[^1].SequenceEqual(["-change", "-monitor-timeout-ac", "10"]),
+            "変更済みの電源設定が元の値へ戻されていません。");
+    }
+    finally
+    {
+        DeleteTemporaryDirectory(directory);
+    }
+}
+
 static async Task TestApprovedLaunchTargetsAsync()
 {
     var catalogText = await File.ReadAllTextAsync(
@@ -483,6 +524,25 @@ static Task TestLauncherTargetValidationAsync()
     }
 }
 
+static Task TestSystemExecutableResolutionAsync()
+{
+    var resolved = CommandRunner.ResolveSystemExecutable("powercfg.exe");
+    Assert(string.Equals(Path.GetDirectoryName(resolved),
+            Environment.GetFolderPath(Environment.SpecialFolder.System),
+            StringComparison.OrdinalIgnoreCase),
+        "Windows標準コマンドがSystem32へ固定されていません。");
+
+    try
+    {
+        CommandRunner.ResolveSystemExecutable(@"..\powercfg.exe");
+        throw new InvalidOperationException("相対パスを含む実行ファイル名が許可されています。");
+    }
+    catch (ArgumentException)
+    {
+        return Task.CompletedTask;
+    }
+}
+
 static async Task TestCommandTimeoutAsync()
 {
     var result = await CommandRunner.RunAsync(
@@ -490,6 +550,45 @@ static async Task TestCommandTimeoutAsync()
     Assert(!result.IsSuccess, "長時間コマンドが成功扱いになっています。");
     Assert(result.TechnicalDetails?.Contains("タイムアウト", StringComparison.Ordinal) == true,
         "タイムアウトの技術情報がありません。");
+}
+
+static Task TestWindowBoundsAsync()
+{
+    var visible = new System.Windows.Rect(0, 0, 1920, 1080);
+    var restored = WinBridge.App.ClampToVisibleArea(
+        new System.Windows.Rect(5000, -2000, 1100, 720), visible);
+    Assert(restored.Left == 820 && restored.Top == 0,
+        "画面外のウィンドウ位置が表示領域へ戻されていません。");
+
+    var secondaryMonitor = new System.Windows.Rect(-1920, 0, 3840, 1080);
+    var preserved = WinBridge.App.ClampToVisibleArea(
+        new System.Windows.Rect(-1500, 100, 1100, 720), secondaryMonitor);
+    Assert(preserved.Left == -1500 && preserved.Top == 100,
+        "表示領域内のマルチモニター座標が変更されています。");
+    return Task.CompletedTask;
+}
+
+static async Task TestReleaseHardeningAsync()
+{
+    var releaseFiles = Path.Combine(AppContext.BaseDirectory, "ReleaseFiles");
+    var installer = await File.ReadAllTextAsync(Path.Combine(releaseFiles, "WinBridge.iss"));
+    Assert(installer.Contains("MinVersion=10.0.22000", StringComparison.Ordinal),
+        "インストーラーの最低OSがWindows 11になっていません。");
+    Assert(installer.Contains("Name: \"english\"", StringComparison.Ordinal) &&
+           installer.Contains("Name: \"japanese\"", StringComparison.Ordinal),
+        "インストーラーに英語と日本語が登録されていません。");
+
+    var manifest = await File.ReadAllTextAsync(Path.Combine(releaseFiles, "app.manifest"));
+    Assert(manifest.Contains("assemblyIdentity version=\"1.1.0.0\"", StringComparison.Ordinal),
+        "アプリマニフェストのバージョンが1.1.0.0ではありません。");
+
+    var packageScript = await File.ReadAllTextAsync(
+        Path.Combine(releaseFiles, "package-release.ps1"));
+    Assert(packageScript.Contains("SigningCertificateThumbprint", StringComparison.Ordinal) &&
+           packageScript.Contains("AllowUnsigned", StringComparison.Ordinal) &&
+           packageScript.Contains("A trusted code-signing certificate is required",
+               StringComparison.Ordinal),
+        "正式な配布物でコード署名を必須にする処理がありません。");
 }
 
 static async Task TestSingleInstanceAsync()

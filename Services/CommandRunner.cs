@@ -15,7 +15,7 @@ internal static class CommandRunner
     {
         try
         {
-            var info = new ProcessStartInfo(fileName)
+            var info = new ProcessStartInfo(ResolveSystemExecutable(fileName))
             {
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -58,5 +58,19 @@ internal static class CommandRunner
             return OperationResult<string>.Failure("Windowsの処理を実行できませんでした。",
                 $"{ex.GetType().Name}: {ex.Message}");
         }
+    }
+
+    internal static string ResolveSystemExecutable(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            throw new ArgumentException("実行ファイル名が指定されていません。", nameof(fileName));
+        if (Path.IsPathFullyQualified(fileName))
+            return fileName;
+        if (!string.Equals(Path.GetFileName(fileName), fileName, StringComparison.Ordinal))
+            throw new ArgumentException("Windows標準実行ファイルはファイル名だけを指定してください。", nameof(fileName));
+
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.System),
+            fileName);
     }
 }

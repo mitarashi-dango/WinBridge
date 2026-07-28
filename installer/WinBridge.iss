@@ -1,5 +1,5 @@
 #ifndef AppVersion
-  #define AppVersion "1.0.0"
+  #define AppVersion "1.1.0"
 #endif
 
 #ifndef SourceDir
@@ -41,7 +41,7 @@ WizardStyle=modern
 CloseApplications=yes
 RestartApplications=no
 ArchitecturesAllowed=x64compatible
-MinVersion=10.0.17763
+MinVersion=10.0.22000
 VersionInfoVersion={#AppVersion}
 VersionInfoCompany={#AppPublisher}
 VersionInfoDescription={#AppName} installer
@@ -49,18 +49,29 @@ VersionInfoProductName={#AppName}
 VersionInfoProductVersion={#AppVersion}
 
 [Languages]
+Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"
 
+[CustomMessages]
+english.DesktopIcon=Create a desktop shortcut
+japanese.DesktopIcon=デスクトップにショートカットを作成する
+english.AdditionalShortcuts=Additional shortcuts:
+japanese.AdditionalShortcuts=追加のショートカット:
+english.UninstallShortcut=Uninstall %1
+japanese.UninstallShortcut=%1 のアンインストール
+english.LaunchProgram=Launch %1
+japanese.LaunchProgram=%1 を起動する
+
 [Tasks]
-Name: "desktopicon"; Description: "デスクトップにショートカットを作成する"; GroupDescription: "追加のショートカット:"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:DesktopIcon}"; GroupDescription: "{cm:AdditionalShortcuts}"; Flags: unchecked
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{#AppName}"; Filename: "{app}\{#AppExeName}"
-Name: "{group}\{#AppName} のアンインストール"; Filename: "{uninstallexe}"
+Name: "{group}\{cm:UninstallShortcut,{#AppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#AppExeName}"; Description: "{#AppName} を起動する"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#AppExeName}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent

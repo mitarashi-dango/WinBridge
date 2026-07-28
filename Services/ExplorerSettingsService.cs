@@ -84,7 +84,9 @@ public sealed class ExplorerSettingsService
         await Task.Delay(800);
         try
         {
-            Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = true });
+            var explorerPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe");
+            Process.Start(new ProcessStartInfo(explorerPath) { UseShellExecute = true });
             _logger.Info($"エクスプローラーを再起動しました。終了処理成功: {stop.IsSuccess}");
             return OperationResult.Success("エクスプローラーを再起動しました。");
         }

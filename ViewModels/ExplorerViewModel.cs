@@ -57,7 +57,9 @@ public sealed class ExplorerViewModel : ObservableObject
         {
             try
             {
-                Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = true });
+                var explorerPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe");
+                Process.Start(new ProcessStartInfo(explorerPath) { UseShellExecute = true });
                 _report(OperationResult.Success("エクスプローラーを開きました。"));
             }
             catch (Exception ex)

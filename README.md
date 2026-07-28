@@ -44,14 +44,20 @@ dotnet run -c Release
 Inno Setup 6または7をインストールしたWindows環境では、次のコマンドでポータブル版ZIP、ユーザー単位インストーラー、SHA-256一覧を同時に生成できます。
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\package-release.ps1 -Version 1.0.0
+powershell -ExecutionPolicy Bypass -File .\tools\package-release.ps1 `
+  -Version 1.1.0 `
+  -AllowUnsigned
 ```
 
-成果物はプロジェクト直下の `WinBridge-release-v1.0.0` に作成されます。
+コード署名証明書がある場合は、`-AllowUnsigned` の代わりに
+`-SigningCertificateThumbprint <証明書の拇印>` を指定できます。署名を省略する場合でも、
+成果物のファイル名は変わりません。
+
+成果物はプロジェクト直下の `WinBridge-release-v1.1.0` に作成されます。
 
 ```text
-WinBridge-v1.0.0-win-x64-portable.zip
-WinBridge-v1.0.0-win-x64-Setup.exe
+WinBridge-v1.1.0-win-x64-portable.zip
+WinBridge-v1.1.0-win-x64-Setup.exe
 SHA256SUMS.txt
 ```
 
@@ -60,11 +66,12 @@ SHA256SUMS.txt
 ダウンロード後の整合性は次のように確認できます。
 
 ```powershell
-Get-FileHash .\WinBridge-v1.0.0-win-x64-portable.zip -Algorithm SHA256
-Get-FileHash .\WinBridge-v1.0.0-win-x64-Setup.exe -Algorithm SHA256
+Get-FileHash .\WinBridge-v1.1.0-win-x64-portable.zip -Algorithm SHA256
+Get-FileHash .\WinBridge-v1.1.0-win-x64-Setup.exe -Algorithm SHA256
 ```
 
-表示された値がGitHub Releaseに添付された `SHA256SUMS.txt` と一致することを確認してください。現在の配布物はコード署名されていないため、Windows Defender SmartScreenの警告が表示される場合があります。
+表示された値がGitHub Releaseに添付された `SHA256SUMS.txt` と一致することを確認してください。
+コード署名証明書を使わずに生成した場合、環境によってはWindowsが発行元の確認画面を表示することがあります。
 
 ## 自動テスト
 
