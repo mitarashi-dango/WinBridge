@@ -34,6 +34,7 @@ public sealed class ModuleService
 
         foreach (var definition in definitions)
         {
+            CatalogLocalizationService.Localize(definition);
             var preference = Settings.Modules.FirstOrDefault(p =>
                 string.Equals(p.Id, definition.Id, StringComparison.OrdinalIgnoreCase));
             if (preference is not null)
@@ -67,6 +68,10 @@ public sealed class ModuleService
         _logger.Info($"モジュールの順序を変更しました: {item.Id}");
         return result;
     }
+
+    public bool IsVisible(string id) =>
+        Modules.FirstOrDefault(module =>
+            string.Equals(module.Id, id, StringComparison.OrdinalIgnoreCase))?.IsVisible == true;
 
     public void Sort()
     {

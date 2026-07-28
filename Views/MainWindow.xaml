@@ -1,6 +1,9 @@
 <Window x:Class="WinBridge.Views.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:WinBridge.Localization"
+        xmlns:models="clr-namespace:WinBridge.Models"
+        xmlns:vm="clr-namespace:WinBridge.ViewModels"
         Title="WinBridge" Icon="/Resources/AppIcon.ico"
         Width="1100" Height="720" MinWidth="820" MinHeight="560"
         Background="{StaticResource PageBrush}" WindowStartupLocation="CenterScreen">
@@ -17,16 +20,18 @@
     <Border Grid.RowSpan="2" Background="#132238">
       <DockPanel Margin="14">
         <StackPanel DockPanel.Dock="Bottom">
-          <Button Content="Windows設定を追加" HorizontalContentAlignment="Left"
+          <Button Content="{loc:Loc '言語設定'}" HorizontalContentAlignment="Left"
+                  Command="{Binding NavigateCommand}" CommandParameter="app-preferences"/>
+          <Button Content="{loc:Loc 'Windows設定を追加'}" HorizontalContentAlignment="Left"
                   Command="{Binding NavigateCommand}" CommandParameter="settings-catalog"/>
-          <Button Content="表示する機能" HorizontalContentAlignment="Left"
+          <Button Content="{loc:Loc '表示する機能'}" HorizontalContentAlignment="Left"
                   Command="{Binding NavigateCommand}" CommandParameter="module-settings"/>
         </StackPanel>
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel>
           <TextBlock Text="WinBridge" Foreground="White" FontSize="26" FontWeight="SemiBold" Margin="10,14,10,2"/>
-          <TextBlock Text="よく使うWindows設定" Foreground="#B9C8DB" Margin="10,0,10,22"/>
-          <Button Content="ホーム" HorizontalContentAlignment="Left"
+          <TextBlock Text="{loc:Loc 'よく使うWindows設定'}" Foreground="#B9C8DB" Margin="10,0,10,22"/>
+          <Button Content="{loc:Loc 'ホーム'}" HorizontalContentAlignment="Left"
                   Command="{Binding NavigateCommand}" CommandParameter="home"/>
           <ItemsControl ItemsSource="{Binding VisibleModules}">
             <ItemsControl.ItemTemplate>
@@ -39,7 +44,7 @@
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
-          <TextBlock Text="追加した設定" Foreground="#B9C8DB" FontWeight="SemiBold" Margin="10,18,10,6">
+          <TextBlock Text="{loc:Loc '追加した設定'}" Foreground="#B9C8DB" FontWeight="SemiBold" Margin="10,18,10,6">
             <TextBlock.Style>
               <Style TargetType="TextBlock">
                 <Setter Property="Visibility" Value="Visible"/>
@@ -51,10 +56,17 @@
               </Style>
             </TextBlock.Style>
           </TextBlock>
-          <ItemsControl ItemsSource="{Binding PinnedSettings}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate>
-                <Button HorizontalContentAlignment="Left"
+          <TreeView ItemsSource="{Binding PinnedSettingGroups}" Background="Transparent"
+                    BorderThickness="0" Foreground="White"
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <TreeView.Resources>
+              <HierarchicalDataTemplate DataType="{x:Type vm:SettingCategoryViewModel}"
+                                        ItemsSource="{Binding Settings}">
+                <TextBlock Text="{Binding Name}" Foreground="#D5E1EF"
+                           FontWeight="SemiBold" Margin="2,6,2,3"/>
+              </HierarchicalDataTemplate>
+              <DataTemplate DataType="{x:Type models:SettingDefinition}">
+                <Button HorizontalContentAlignment="Left" MaxWidth="185"
                         Command="{Binding DataContext.OpenSettingCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                         CommandParameter="{Binding}">
                   <TextBlock TextTrimming="CharacterEllipsis">
@@ -62,8 +74,15 @@
                   </TextBlock>
                 </Button>
               </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
+            </TreeView.Resources>
+            <TreeView.ItemContainerStyle>
+              <Style TargetType="TreeViewItem">
+                <Setter Property="Foreground" Value="White"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="IsExpanded" Value="False"/>
+              </Style>
+            </TreeView.ItemContainerStyle>
+          </TreeView>
         </StackPanel>
         </ScrollViewer>
       </DockPanel>
@@ -76,9 +95,9 @@
           <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
           <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" Margin="20,0"
                      Foreground="{StaticResource MutedBrush}" AutomationProperties.LiveSetting="Polite"/>
-          <Button Grid.Column="1" Content="詳細" Command="{Binding ToggleErrorDetailsCommand}"
+          <Button Grid.Column="1" Content="{loc:Loc '詳細'}" Command="{Binding ToggleErrorDetailsCommand}"
                   Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}"/>
-          <Button Grid.Column="2" Content="閉じる" Command="{Binding DismissErrorCommand}"
+          <Button Grid.Column="2" Content="{loc:Loc '閉じる'}" Command="{Binding DismissErrorCommand}"
                   Visibility="{Binding HasError, Converter={StaticResource BoolToVisibility}}"/>
         </Grid>
         <Border Background="#FFF7ED" BorderBrush="#F5B971" BorderThickness="1,1,1,0"
@@ -89,7 +108,7 @@
             <TextBlock Text="{Binding ErrorOccurredAt}" Margin="0,5,0,7" Foreground="{StaticResource MutedBrush}"/>
             <TextBox Text="{Binding ErrorTechnicalDetails, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap"
                      VerticalScrollBarVisibility="Auto" MaxHeight="110" Padding="8"
-                     AutomationProperties.Name="エラーの技術情報"/>
+                     AutomationProperties.Name="{loc:Loc 'エラーの技術情報'}"/>
           </StackPanel>
         </Border>
       </StackPanel>

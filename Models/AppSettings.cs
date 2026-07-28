@@ -2,10 +2,13 @@ namespace WinBridge.Models;
 
 public sealed class AppSettings
 {
-    public int Version { get; set; } = 3;
+    public int Version { get; set; } = 7;
+    public string Language { get; set; } = "system";
     public List<ModulePreference> Modules { get; set; } = [];
     public List<SettingPreference> Settings { get; set; } = [];
+    public List<string> DevicePageSettings { get; set; } = [];
     public List<string> Favorites { get; set; } = [];
+    public PowerPresetSettings CustomPowerPreset { get; set; } = new();
     public double WindowWidth { get; set; } = 1100;
     public double WindowHeight { get; set; } = 720;
     public double? WindowLeft { get; set; }

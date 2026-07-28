@@ -17,11 +17,11 @@ public sealed class WindowsUpdateStatusService
                 ? "状態：Windowsの設定画面で確認してください"
                 : "状態：更新後の再起動が必要な可能性があります";
             _logger.Info("Windows Updateの再起動待ち状態を確認しました。");
-            return status;
+            return L.T(status);
         }
         catch
         {
-            return "状態：Windowsの設定画面で確認してください";
+            return L.T("状態：Windowsの設定画面で確認してください");
         }
     }
 }

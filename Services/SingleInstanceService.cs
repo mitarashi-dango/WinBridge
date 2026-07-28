@@ -2,8 +2,7 @@ namespace WinBridge.Services;
 
 public sealed class SingleInstanceService : IDisposable
 {
-    private const string MutexName = @"Local\WinBridge.SingleInstance.v1";
-    private const string ActivationEventName = @"Local\WinBridge.Activate.v1";
+    private const string DefaultInstanceName = "v1";
     private readonly Mutex _mutex;
     private readonly EventWaitHandle _activationEvent;
     private readonly bool _ownsMutex;
@@ -11,11 +10,12 @@ public sealed class SingleInstanceService : IDisposable
 
     public bool IsFirstInstance => _ownsMutex;
 
-    public SingleInstanceService()
+    public SingleInstanceService(string? instanceName = null)
     {
+        var name = string.IsNullOrWhiteSpace(instanceName) ? DefaultInstanceName : instanceName;
         _activationEvent = new EventWaitHandle(
-            false, EventResetMode.AutoReset, ActivationEventName, out _);
-        _mutex = new Mutex(true, MutexName, out _ownsMutex);
+            false, EventResetMode.AutoReset, $@"Local\WinBridge.Activate.{name}", out _);
+        _mutex = new Mutex(true, $@"Local\WinBridge.SingleInstance.{name}", out _ownsMutex);
     }
 
     public void SignalExistingInstance()

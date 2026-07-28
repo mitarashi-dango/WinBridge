@@ -1,0 +1,27 @@
+<UserControl x:Class="WinBridge.Views.AppPreferencesView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:WinBridge.Localization">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel MaxWidth="800" HorizontalAlignment="Left">
+      <TextBlock Text="{loc:Loc '言語設定'}" FontSize="30" FontWeight="SemiBold"/>
+      <TextBlock Text="{loc:Loc 'WinBridgeの表示言語を設定します。Windowsの設定は変更しません。'}"
+                 Foreground="{StaticResource MutedBrush}" Margin="0,4,0,20"/>
+      <Border Style="{StaticResource CardStyle}">
+        <StackPanel>
+          <TextBlock Text="{loc:Loc '表示言語'}" FontSize="20" FontWeight="SemiBold"/>
+          <TextBlock Text="{loc:Loc '「Windowsの表示言語に合わせる」では、日本語環境だけ日本語を表示し、それ以外の環境では英語を表示します。'}"
+                     Foreground="{StaticResource MutedBrush}" Margin="0,6,0,12"/>
+          <ComboBox ItemsSource="{Binding Languages}" DisplayMemberPath="DisplayName"
+                    SelectedItem="{Binding SelectedLanguage}" Width="330"
+                    HorizontalAlignment="Left" MinHeight="36" Padding="8,4"/>
+          <TextBlock Text="{loc:Loc '変更はWinBridgeの再起動後に反映されます。'}"
+                     Foreground="{StaticResource MutedBrush}" Margin="0,10,0,10"/>
+          <Button Content="{loc:Loc '言語設定を保存'}" Command="{Binding SaveCommand}"
+                  HorizontalAlignment="Left" Background="{StaticResource AccentBrush}"
+                  Foreground="White" FontWeight="SemiBold"/>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

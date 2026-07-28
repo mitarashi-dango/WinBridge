@@ -1,102 +1,160 @@
 <UserControl x:Class="WinBridge.Views.DeviceView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:WinBridge.Localization"
+             xmlns:models="clr-namespace:WinBridge.Models"
+             xmlns:vm="clr-namespace:WinBridge.ViewModels">
   <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <StackPanel MaxWidth="840" HorizontalAlignment="Left">
-      <TextBlock Text="デバイスと接続" FontSize="30" FontWeight="SemiBold"/>
-      <TextBlock Text="接続機器の状態と、Windowsの正規設定画面を1か所にまとめています。"
+    <StackPanel MaxWidth="880" HorizontalAlignment="Left">
+      <TextBlock Text="{loc:Loc 'デバイスと接続'}" FontSize="30" FontWeight="SemiBold"/>
+      <TextBlock Text="{loc:Loc '接続機器の状態と、よく使うWindows設定を自分用にまとめられます。'}"
                  Foreground="{StaticResource MutedBrush}" Margin="0,4,0,20"/>
 
       <Border Style="{StaticResource CardStyle}">
         <Grid>
           <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
           <StackPanel>
-            <TextBlock Text="デバイスの状態" FontSize="20" FontWeight="SemiBold"/>
+            <TextBlock Text="{loc:Loc 'デバイスの状態'}" FontSize="20" FontWeight="SemiBold"/>
             <TextBlock Text="{Binding Summary}" Margin="0,8,15,0" LineHeight="22"/>
           </StackPanel>
-          <Button Grid.Column="1" Content="再確認" Command="{Binding RefreshCommand}" VerticalAlignment="Center"/>
+          <Button Grid.Column="1" Content="{loc:Loc '再確認'}" Command="{Binding RefreshCommand}" VerticalAlignment="Center"/>
         </Grid>
       </Border>
 
       <Border Style="{StaticResource CardStyle}">
         <StackPanel>
-          <TextBlock Text="デバイス全般" FontSize="20" FontWeight="SemiBold"/>
-          <TextBlock Text="認識されない機器やドライバーの状態を確認できます。WinBridgeから無効化や削除は行いません。"
+          <TextBlock Text="{loc:Loc 'デバイス全般'}" FontSize="20" FontWeight="SemiBold"/>
+          <TextBlock Text="{loc:Loc '認識されない機器やドライバーの状態を確認できます。WinBridgeから無効化や削除は行いません。'}"
                      Foreground="{StaticResource MutedBrush}" Margin="0,6,0,10"/>
           <WrapPanel>
-            <Button Content="デバイスマネージャー" Command="{Binding OpenCommand}" CommandParameter="device-manager"/>
-            <Button Content="接続済みデバイス" Command="{Binding OpenCommand}" CommandParameter="ms-settings:connecteddevices"/>
-            <Button Content="オプションの更新" Command="{Binding OpenCommand}" CommandParameter="ms-settings:windowsupdate-optionalupdates"/>
+            <Button Content="{loc:Loc 'デバイスマネージャー'}" Command="{Binding OpenCommand}" CommandParameter="device-manager"/>
+            <Button Content="{loc:Loc '接続済みデバイス'}" Command="{Binding OpenCommand}" CommandParameter="ms-settings:connecteddevices"/>
+            <Button Content="{loc:Loc 'オプションの更新'}" Command="{Binding OpenCommand}" CommandParameter="ms-settings:windowsupdate-optionalupdates"/>
           </WrapPanel>
         </StackPanel>
       </Border>
 
-      <UniformGrid Columns="2">
-        <Border Style="{StaticResource CardStyle}" Margin="0,0,7,14">
-          <StackPanel>
-            <TextBlock Text="Bluetooth" FontSize="19" FontWeight="SemiBold"/>
-            <TextBlock Text="機器の追加、接続状態、Bluetoothのオン・オフをWindowsで確認します。"
-                       Foreground="{StaticResource MutedBrush}" Margin="0,6,0,10"/>
-            <Button Content="Bluetooth設定を開く" Command="{Binding OpenCommand}"
-                    CommandParameter="ms-settings:bluetooth" HorizontalAlignment="Left"/>
-          </StackPanel>
-        </Border>
-        <Border Style="{StaticResource CardStyle}" Margin="7,0,0,14">
-          <StackPanel>
-            <TextBlock Text="プリンター" FontSize="19" FontWeight="SemiBold"/>
-            <TextBlock Text="プリンターやスキャナーの追加、既定値、印刷キューを確認します。"
-                       Foreground="{StaticResource MutedBrush}" Margin="0,6,0,10"/>
-            <Button Content="プリンター設定を開く" Command="{Binding OpenCommand}"
-                    CommandParameter="ms-settings:printers" HorizontalAlignment="Left"/>
-          </StackPanel>
-        </Border>
-        <Border Style="{StaticResource CardStyle}" Margin="0,0,7,14">
-          <StackPanel>
-            <TextBlock Text="USB" FontSize="19" FontWeight="SemiBold"/>
-            <TextBlock Text="USB機器の接続通知や、接続に問題がある場合の通知設定を確認します。"
-                       Foreground="{StaticResource MutedBrush}" Margin="0,6,0,10"/>
-            <Button Content="USB設定を開く" Command="{Binding OpenCommand}"
-                    CommandParameter="ms-settings:usb" HorizontalAlignment="Left"/>
-          </StackPanel>
-        </Border>
-        <Border Style="{StaticResource CardStyle}" Margin="7,0,0,14">
-          <StackPanel>
-            <TextBlock Text="カメラ" FontSize="19" FontWeight="SemiBold"/>
-            <TextBlock Text="接続されたカメラの映像、明るさ、既定設定をWindowsで確認します。"
-                       Foreground="{StaticResource MutedBrush}" Margin="0,6,0,10"/>
-            <Button Content="カメラ設定を開く" Command="{Binding OpenCommand}"
-                    CommandParameter="ms-settings:camera" HorizontalAlignment="Left"/>
-          </StackPanel>
-        </Border>
-        <Border Style="{StaticResource CardStyle}" Margin="0,0,7,14">
-          <StackPanel>
-            <TextBlock Text="マウス" FontSize="19" FontWeight="SemiBold"/>
-            <TextBlock Text="主に使うボタン、ポインター速度、スクロール量をWindowsで調整します。"
-                       Foreground="{StaticResource MutedBrush}" Margin="0,6,0,10"/>
-            <Button Content="マウス設定を開く" Command="{Binding OpenCommand}"
-                    CommandParameter="ms-settings:mousetouchpad" HorizontalAlignment="Left"/>
-          </StackPanel>
-        </Border>
-        <Border Style="{StaticResource CardStyle}" Margin="7,0,0,14">
-          <StackPanel>
-            <TextBlock Text="マイク" FontSize="19" FontWeight="SemiBold"/>
-            <TextBlock Text="既定の入力マイク、音量、アプリからのアクセス許可をWindowsで確認します。"
-                       Foreground="{StaticResource MutedBrush}" Margin="0,6,0,10"/>
-            <WrapPanel>
-              <Button Content="入力マイク設定" Command="{Binding OpenCommand}"
-                      CommandParameter="ms-settings:sound-defaultinputproperties"/>
-              <Button Content="マイクのアクセス許可" Command="{Binding OpenCommand}"
-                      CommandParameter="ms-settings:privacy-microphone"/>
-            </WrapPanel>
-          </StackPanel>
-        </Border>
-      </UniformGrid>
+      <TextBlock Text="{loc:Loc 'このページに表示する設定'}" FontSize="21" FontWeight="SemiBold" Margin="0,4,0,5"/>
+      <TextBlock Text="{loc:Loc '最初の6項目は例として登録されています。不要な項目はいつでも外せます。'}"
+                 Foreground="{StaticResource MutedBrush}" Margin="0,0,0,12"/>
+      <TextBlock Text="{loc:Loc '表示する設定がありません。下のデバイス設定から追加できます。'}"
+                 Foreground="{StaticResource MutedBrush}" Margin="0,6,0,14">
+        <TextBlock.Style>
+          <Style TargetType="TextBlock">
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding SelectedSettings.Count}" Value="0">
+                <Setter Property="Visibility" Value="Visible"/>
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </TextBlock.Style>
+      </TextBlock>
+      <ItemsControl ItemsSource="{Binding SelectedSettings}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Border Background="White" BorderBrush="#DCE3EC" BorderThickness="1"
+                    CornerRadius="10" Padding="16" Width="410" MinHeight="142"
+                    Margin="0,0,12,12">
+              <Grid>
+                <Grid.RowDefinitions>
+                  <RowDefinition Height="Auto"/>
+                  <RowDefinition Height="*"/>
+                  <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid>
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="38"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="{Binding Icon}" FontSize="24" VerticalAlignment="Center"/>
+                  <StackPanel Grid.Column="1" Margin="3,0,8,0">
+                    <TextBlock Text="{Binding DisplayName}" FontSize="18" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding Category}" FontSize="12" Foreground="{StaticResource MutedBrush}"/>
+                  </StackPanel>
+                  <Button Grid.Column="2" Content="{loc:Loc '外す'}" Padding="9,4" MinHeight="28"
+                          Command="{Binding DataContext.RemoveSettingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          CommandParameter="{Binding}" VerticalAlignment="Top"/>
+                </Grid>
+                <TextBlock Grid.Row="1" Text="{Binding Description}" Foreground="{StaticResource MutedBrush}"
+                           Margin="0,9,0,8"/>
+                <Button Grid.Row="2" Content="{loc:Loc '設定を開く'}" HorizontalAlignment="Left"
+                        Command="{Binding DataContext.OpenSettingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        CommandParameter="{Binding}"/>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+
+      <Border Style="{StaticResource CardStyle}" Margin="0,6,0,14">
+        <StackPanel>
+          <TextBlock Text="{loc:Loc '設定を追加'}" FontSize="21" FontWeight="SemiBold"/>
+          <TextBlock Text="{loc:Loc 'デバイス関連の設定だけを、このページへ追加できます。'}"
+                     Foreground="{StaticResource MutedBrush}" Margin="0,5,0,8"/>
+          <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                   Margin="0,5,0,12" Padding="12,9"
+                   ToolTip="{loc:Loc '設定名や用途で検索'}" AutomationProperties.Name="{loc:Loc 'デバイスページへ追加する設定を検索'}"/>
+          <TextBlock Text="{loc:Loc '追加できる設定がありません。'}"
+                     Foreground="{StaticResource MutedBrush}" Margin="3,5">
+            <TextBlock.Style>
+              <Style TargetType="TextBlock">
+                <Setter Property="Visibility" Value="Collapsed"/>
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding AvailableSettingCategories.Count}" Value="0">
+                    <Setter Property="Visibility" Value="Visible"/>
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </TextBlock.Style>
+          </TextBlock>
+          <TreeView ItemsSource="{Binding AvailableSettingCategories}"
+                    Background="Transparent" BorderThickness="0" MaxHeight="390"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto">
+            <TreeView.Resources>
+              <HierarchicalDataTemplate DataType="{x:Type vm:SettingCategoryViewModel}"
+                                        ItemsSource="{Binding Settings}">
+                <TextBlock Text="{Binding Name}" FontSize="17" FontWeight="SemiBold" Margin="4,5"/>
+              </HierarchicalDataTemplate>
+              <DataTemplate DataType="{x:Type models:SettingDefinition}">
+                <Grid Margin="5,3,3,5" MinWidth="650">
+                  <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="38"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                  </Grid.ColumnDefinitions>
+                  <TextBlock Text="{Binding Icon}" FontSize="21" VerticalAlignment="Center"/>
+                  <StackPanel Grid.Column="1" Margin="3,0,12,0">
+                    <TextBlock Text="{Binding DisplayName}" FontSize="15" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding Description}" Foreground="{StaticResource MutedBrush}" FontSize="12"/>
+                  </StackPanel>
+                  <Button Grid.Column="2" Content="{loc:Loc '追加'}"
+                          Command="{Binding DataContext.AddSettingCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                          CommandParameter="{Binding}" VerticalAlignment="Center"/>
+                </Grid>
+              </DataTemplate>
+            </TreeView.Resources>
+            <TreeView.ItemContainerStyle>
+              <Style TargetType="TreeViewItem">
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="IsExpanded" Value="False"/>
+              </Style>
+            </TreeView.ItemContainerStyle>
+          </TreeView>
+          <TextBlock Text="{loc:Loc '機器依存の設定は、このPCで対応機器を検出した場合だけ候補に表示されます。'}"
+                     Foreground="{StaticResource MutedBrush}" FontSize="12" Margin="3,9,0,0"/>
+        </StackPanel>
+      </Border>
 
       <Border Style="{StaticResource CardStyle}">
         <StackPanel>
-          <TextBlock Text="安全について" FontSize="19" FontWeight="SemiBold"/>
+          <TextBlock Text="{loc:Loc '安全について'}" FontSize="19" FontWeight="SemiBold"/>
           <TextBlock Margin="0,7,0,0" LineHeight="22"
-                     Text="この画面はデバイス状態を読み取り、Windowsの正規画面を開くだけです。ドライバーの強制更新・削除、デバイスの無効化、問題機器の一括修復は行いません。"/>
+                     Text="{loc:Loc 'この画面はデバイス状態を読み取り、Windowsの正規画面を開くだけです。ドライバーの強制更新・削除、デバイスの無効化、問題機器の一括修復は行いません。'}"/>
         </StackPanel>
       </Border>
     </StackPanel>

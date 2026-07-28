@@ -8,7 +8,7 @@ public sealed class WindowsUpdateViewModel : ObservableObject
     private readonly WindowsSettingsLauncher _launcher;
     private readonly WindowsUpdateStatusService _statusService;
     private readonly Action<OperationResult> _report;
-    private string _updateStatus = "状態を確認しています…";
+    private string _updateStatus = L.T("状態を確認しています…");
     public string UpdateStatus { get => _updateStatus; set => SetProperty(ref _updateStatus, value); }
     public RelayCommand OpenCommand { get; }
 

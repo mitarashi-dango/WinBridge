@@ -8,6 +8,7 @@ namespace WinBridge.ViewModels;
 public sealed class PowerViewModel : ObservableObject
 {
     private readonly PowerSettingsService _service;
+    private readonly PowerPresetService _presetService;
     private readonly Action<OperationResult> _report;
     private bool _hasBattery;
     private PowerChoice? _acDisplay, _acSleep, _dcDisplay, _dcSleep;
@@ -21,14 +22,18 @@ public sealed class PowerViewModel : ObservableObject
     public PowerChoice? DcSleep { get => _dcSleep; set => SetProperty(ref _dcSleep, value); }
     public AsyncRelayCommand RefreshCommand { get; }
     public AsyncRelayCommand ApplyCommand { get; }
+    public AsyncRelayCommand SaveCustomPresetCommand { get; }
     public RelayCommand PresetCommand { get; }
 
-    public PowerViewModel(PowerSettingsService service, Action<OperationResult> report)
+    public PowerViewModel(PowerSettingsService service, PowerPresetService presetService,
+        Action<OperationResult> report)
     {
         _service = service;
+        _presetService = presetService;
         _report = report;
         RefreshCommand = new AsyncRelayCommand(RefreshAsync);
         ApplyCommand = new AsyncRelayCommand(ApplyAsync);
+        SaveCustomPresetCommand = new AsyncRelayCommand(SaveCustomPresetAsync);
         PresetCommand = new RelayCommand(p => SelectPreset(p?.ToString() ?? ""));
     }
 
@@ -59,8 +64,8 @@ public sealed class PowerViewModel : ObservableObject
             (HasBattery && NeedsWarning(DcDisplay!.Minutes, DcSleep!.Minutes)))
         {
             var answer = MessageBox.Show(
-                "スリープが画面OFFより先に実行されるため、画面OFF設定は通常使用されません。\n\nこの設定を適用しますか？",
-                "設定の確認", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                L.T("スリープが画面OFFより先に実行されるため、画面OFF設定は通常使用されません。\n\nこの設定を適用しますか？"),
+                L.T("設定の確認"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (answer != MessageBoxResult.Yes) return;
         }
         var value = new PowerSettings(HasBattery, AcDisplay.Minutes, AcSleep.Minutes,
@@ -72,17 +77,49 @@ public sealed class PowerViewModel : ObservableObject
 
     private void SelectPreset(string preset)
     {
-        var (display, sleep) = preset switch
+        if (preset == "custom")
         {
-            "focus" => (0, 0),
-            "saving" => (3, 5),
-            _ => (10, 30)
-        };
-        AcDisplay = Choice(DisplayChoices, display);
-        AcSleep = Choice(SleepChoices, sleep);
-        DcDisplay = Choice(DisplayChoices, display);
-        DcSleep = Choice(SleepChoices, sleep);
+            var custom = _presetService.Get();
+            AcDisplay = Choice(DisplayChoices, custom.AcDisplayMinutes);
+            AcSleep = Choice(SleepChoices, custom.AcSleepMinutes);
+            DcDisplay = Choice(DisplayChoices, custom.DcDisplayMinutes);
+            DcSleep = Choice(SleepChoices, custom.DcSleepMinutes);
+        }
+        else
+        {
+            var (display, sleep) = preset switch
+            {
+                "focus" => (0, 0),
+                "saving" => (3, 5),
+                _ => (10, 30)
+            };
+            AcDisplay = Choice(DisplayChoices, display);
+            AcSleep = Choice(SleepChoices, sleep);
+            DcDisplay = Choice(DisplayChoices, display);
+            DcSleep = Choice(SleepChoices, sleep);
+        }
         _report(OperationResult.Success("プリセットを選択しました。「設定を適用」するまでWindowsには反映されません。"));
+    }
+
+    private async Task SaveCustomPresetAsync()
+    {
+        if (AcDisplay is null || AcSleep is null)
+        {
+            _report(OperationResult.Success("すべての時間を選択してください。"));
+            return;
+        }
+
+        var preset = new PowerPresetSettings
+        {
+            AcDisplayMinutes = AcDisplay.Minutes,
+            AcSleepMinutes = AcSleep.Minutes,
+            DcDisplayMinutes = DcDisplay?.Minutes ?? AcDisplay.Minutes,
+            DcSleepMinutes = DcSleep?.Minutes ?? AcSleep.Minutes
+        };
+        var result = await _presetService.SaveAsync(preset);
+        _report(result.IsSuccess
+            ? OperationResult.Success("現在の選択を「お好み」プリセットへ保存しました。")
+            : result);
     }
 
     private static bool NeedsWarning(int display, int sleep) =>
@@ -92,7 +129,7 @@ public sealed class PowerViewModel : ObservableObject
     {
         var existing = choices.FirstOrDefault(c => c.Minutes == minutes);
         if (existing is not null) return existing;
-        var custom = new PowerChoice(minutes, $"{minutes}分（現在値）");
+        var custom = new PowerChoice(minutes, L.F("{0}分（現在値）", minutes));
         choices.Insert(choices.Count - 1, custom);
         return custom;
     }
@@ -100,6 +137,7 @@ public sealed class PowerViewModel : ObservableObject
     private static ObservableCollection<PowerChoice> CreateChoices(IEnumerable<int> values) =>
         new(values.Select(m => new PowerChoice(m, m switch
         {
-            0 => "なし", 60 => "1時間", 120 => "2時間", 180 => "3時間", _ => $"{m}分"
+            0 => L.T("なし"), 60 => L.T("1時間"), 120 => L.T("2時間"), 180 => L.T("3時間"),
+            _ => L.F("{0}分", m)
         })));
 }

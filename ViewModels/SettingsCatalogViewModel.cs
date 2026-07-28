@@ -58,7 +58,7 @@ public sealed class SettingsCatalogViewModel : ObservableObject
 
     private bool IsAvailable(object item)
     {
-        if (item is not SettingDefinition setting || setting.IsSelected) return false;
+        if (item is not SettingDefinition setting || !setting.IsAvailable || setting.IsSelected) return false;
         if (string.IsNullOrWhiteSpace(SearchText)) return true;
         var query = SearchText.Trim();
         return setting.DisplayName.Contains(query, StringComparison.CurrentCultureIgnoreCase)
@@ -72,7 +72,7 @@ public sealed class SettingsCatalogViewModel : ObservableObject
         if (setting is null) return;
         var result = await _catalog.AddAsync(setting);
         AvailableSettingsView.Refresh();
-        Changed(result, $"「{setting.DisplayName}」を追加しました。");
+        Changed(result, L.F("「{0}」を追加しました。", setting.DisplayName));
     }
 
     private async Task RemoveAsync(SettingDefinition? setting)
@@ -80,7 +80,8 @@ public sealed class SettingsCatalogViewModel : ObservableObject
         if (setting is null) return;
         var result = await _catalog.RemoveAsync(setting);
         AvailableSettingsView.Refresh();
-        Changed(result, $"「{setting.DisplayName}」をWinBridgeから外しました。Windowsの設定は変更されていません。");
+        Changed(result, L.F("「{0}」をWinBridgeから外しました。Windowsの設定は変更されていません。",
+            setting.DisplayName));
     }
 
     private async Task MoveAsync(SettingDefinition? setting, int delta)

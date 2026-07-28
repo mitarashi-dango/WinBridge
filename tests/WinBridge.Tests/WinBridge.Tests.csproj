@@ -12,5 +12,14 @@
     <None Include="..\..\Resources\SettingDefinitions.json"
           Link="Resources\SettingDefinitions.json"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Resources\ModuleDefinitions.json"
+          Link="Resources\ModuleDefinitions.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Resources\Strings.en-US.json"
+          Link="Resources\Strings.en-US.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Views\*.xaml"
+          Link="Views\%(Filename)%(Extension)"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

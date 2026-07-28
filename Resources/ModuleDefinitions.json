@@ -40,13 +40,13 @@
     "order": 4,
     "isAvailable": true,
     "requiresAdministrator": false,
-    "settingsUri": "ms-settings:storage",
+    "settingsUri": "ms-settings:storagesense",
     "safetyClass": "DirectChange"
   },
   {
     "id": "devices",
     "displayName": "デバイスと接続",
-    "description": "デバイスマネージャー、Bluetooth、プリンター、USB、カメラ、マウス、マイクをまとめて確認します",
+    "description": "デバイスの状態確認と、選べるデバイス設定をまとめます",
     "icon": "⌁",
     "order": 5,
     "isAvailable": true,

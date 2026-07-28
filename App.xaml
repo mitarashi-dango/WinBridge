@@ -34,5 +34,6 @@
     <DataTemplate DataType="{x:Type vm:DeviceViewModel}"><views:DeviceView/></DataTemplate>
     <DataTemplate DataType="{x:Type vm:ModuleSettingsViewModel}"><views:ModuleSettingsView/></DataTemplate>
     <DataTemplate DataType="{x:Type vm:SettingsCatalogViewModel}"><views:SettingsCatalogView/></DataTemplate>
+    <DataTemplate DataType="{x:Type vm:AppPreferencesViewModel}"><views:AppPreferencesView/></DataTemplate>
   </Application.Resources>
 </Application>

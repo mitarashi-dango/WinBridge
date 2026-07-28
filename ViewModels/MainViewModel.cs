@@ -11,7 +11,7 @@ public sealed class MainViewModel : ObservableObject
     private readonly SettingCatalogService _settingCatalog;
     private readonly WindowsSettingsLauncher _launcher;
     private object? _currentViewModel;
-    private string _statusMessage = "準備ができました。";
+    private string _statusMessage = L.T("準備ができました。");
     private bool _hasError;
     private bool _isErrorDetailsVisible;
     private string _errorMessage = "";
@@ -21,6 +21,7 @@ public sealed class MainViewModel : ObservableObject
     public ObservableCollection<ModuleDefinition> VisibleModules { get; } = [];
     public ObservableCollection<SettingDefinition> SelectedSettings => _settingCatalog.SelectedSettings;
     public ObservableCollection<SettingDefinition> PinnedSettings { get; } = [];
+    public ObservableCollection<SettingCategoryViewModel> PinnedSettingGroups { get; } = [];
     public object? CurrentViewModel { get => _currentViewModel; private set => SetProperty(ref _currentViewModel, value); }
     public string StatusMessage { get => _statusMessage; private set => SetProperty(ref _statusMessage, value); }
     public bool HasError { get => _hasError; private set => SetProperty(ref _hasError, value); }
@@ -40,9 +41,11 @@ public sealed class MainViewModel : ObservableObject
     public DeviceViewModel Devices { get; }
     public ModuleSettingsViewModel ModuleSettings { get; }
     public SettingsCatalogViewModel SettingsCatalog { get; }
+    public AppPreferencesViewModel AppPreferences { get; }
 
     public MainViewModel(ModuleService modules, SettingCatalogService settingCatalog,
-        PowerSettingsService power, WindowsSettingsLauncher launcher,
+        DevicePageSettingsService devicePageSettings,
+        PowerSettingsService power, PowerPresetService powerPreset, WindowsSettingsLauncher launcher,
         ExplorerSettingsService explorer, WindowsUpdateStatusService updateStatus, SearchStatusService searchStatus,
         DeviceStatusService deviceStatus)
     {
@@ -54,13 +57,14 @@ public sealed class MainViewModel : ObservableObject
         ToggleErrorDetailsCommand = new RelayCommand(() => IsErrorDetailsVisible = !IsErrorDetailsVisible);
         DismissErrorCommand = new RelayCommand(ClearError);
         Home = new HomeViewModel(modules.Modules, settingCatalog.SelectedSettings, Navigate, OpenSetting);
-        Power = new PowerViewModel(power, Report);
+        Power = new PowerViewModel(power, powerPreset, Report);
         WindowsUpdate = new WindowsUpdateViewModel(launcher, updateStatus, Report);
         Search = new SearchViewModel(launcher, searchStatus, Report);
         Explorer = new ExplorerViewModel(explorer, launcher, Report);
-        Devices = new DeviceViewModel(deviceStatus, launcher, Report);
+        Devices = new DeviceViewModel(deviceStatus, devicePageSettings, launcher, Report);
         ModuleSettings = new ModuleSettingsViewModel(modules, RefreshNavigation, Report);
         SettingsCatalog = new SettingsCatalogViewModel(settingCatalog, RefreshSettings, Report);
+        AppPreferences = new AppPreferencesViewModel(modules, Report);
         _pages["home"] = Home;
         _pages["power"] = Power;
         _pages["windows-update"] = WindowsUpdate;
@@ -69,17 +73,22 @@ public sealed class MainViewModel : ObservableObject
         _pages["devices"] = Devices;
         _pages["module-settings"] = ModuleSettings;
         _pages["settings-catalog"] = SettingsCatalog;
+        _pages["app-preferences"] = AppPreferences;
         RefreshNavigation();
         RefreshSettings();
     }
 
     public async Task InitializeAsync()
     {
-        Navigate(_modules.Settings.LastModuleId is { } id && _pages.ContainsKey(id) ? id : "home");
+        // 起動時は前回表示していたページを復元せず、必ずホームから開始する。
+        Navigate("home");
         await Power.RefreshAsync();
         WindowsUpdate.Refresh();
         await Search.RefreshAsync();
-        await Devices.RefreshAsync();
+        // 非表示の機能は起動時にバックグラウンド処理も行わない。
+        // 再表示後は、そのページを開いた時点で最新状態を取得する。
+        if (_modules.IsVisible("devices"))
+            await Devices.RefreshAsync();
     }
 
     public async Task<OperationResult> SaveWindowAsync(Window window)
@@ -102,7 +111,11 @@ public sealed class MainViewModel : ObservableObject
         if (page == Home) Home.Refresh();
         if (page == WindowsUpdate) WindowsUpdate.Refresh();
         if (page == Explorer) Explorer.Refresh();
-        if (page == Devices) _ = Devices.RefreshAsync();
+        if (page == Devices)
+        {
+            Devices.RefreshSettingChoices();
+            _ = Devices.RefreshAsync();
+        }
     }
 
     private void RefreshNavigation()
@@ -123,6 +136,16 @@ public sealed class MainViewModel : ObservableObject
         PinnedSettings.Clear();
         foreach (var setting in SelectedSettings.Where(s => s.IsPinned).OrderBy(s => s.Order))
             PinnedSettings.Add(setting);
+        PinnedSettingGroups.Clear();
+        foreach (var group in PinnedSettings
+                     .GroupBy(setting => setting.Category)
+                     .OrderBy(group => group.Key, StringComparer.CurrentCulture))
+        {
+            var category = new SettingCategoryViewModel { Name = group.Key };
+            foreach (var setting in group.OrderBy(item => item.Order))
+                category.Settings.Add(setting);
+            PinnedSettingGroups.Add(category);
+        }
         Home.Refresh();
         OnPropertyChanged(nameof(SelectedSettings));
     }
@@ -146,7 +169,7 @@ public sealed class MainViewModel : ObservableObject
         IsErrorDetailsVisible = false;
         ErrorMessage = result.UserMessage;
         ErrorTechnicalDetails = SanitizeTechnicalDetails(result.TechnicalDetails);
-        ErrorOccurredAt = $"発生日時: {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss zzz}";
+        ErrorOccurredAt = L.F("発生日時: {0:yyyy-MM-dd HH:mm:ss zzz}", DateTimeOffset.Now);
     }
 
     private void ClearError()
@@ -160,7 +183,7 @@ public sealed class MainViewModel : ObservableObject
 
     private static string SanitizeTechnicalDetails(string? details)
     {
-        if (string.IsNullOrWhiteSpace(details)) return "追加の技術情報はありません。";
+        if (string.IsNullOrWhiteSpace(details)) return L.T("追加の技術情報はありません。");
         var result = details;
         var profile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         if (!string.IsNullOrWhiteSpace(profile))

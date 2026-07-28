@@ -6,9 +6,27 @@ public sealed record SettingsMigrationResult(AppSettings Settings, bool CanSave,
 
 public static class AppSettingsMigrator
 {
-    public const int CurrentVersion = 3;
+    public const int CurrentVersion = 7;
     private static readonly string[] InitialSettings =
         ["system.display", "system.sound", "devices.bluetooth"];
+    private static readonly string[] InitialDevicePageSettings =
+    [
+        "devices.mouse",
+        "devices.typing",
+        "devices.microphone",
+        "devices.printers",
+        "devices.camera",
+        "devices.bluetooth"
+    ];
+    private static readonly string[] PreviousInitialDevicePageSettings =
+    [
+        "devices.bluetooth",
+        "devices.printers",
+        "devices.usb",
+        "devices.camera",
+        "devices.mouse",
+        "devices.microphone"
+    ];
 
     public static SettingsMigrationResult Migrate(AppSettings settings)
     {
@@ -44,6 +62,32 @@ public static class AppSettingsMigrator
             settings.Version = 3;
         }
 
+        if (settings.Version == 3)
+        {
+            settings.DevicePageSettings = [.. InitialDevicePageSettings];
+            settings.Version = 4;
+        }
+
+        if (settings.Version == 4)
+        {
+            if (settings.DevicePageSettings.SequenceEqual(
+                    PreviousInitialDevicePageSettings, StringComparer.OrdinalIgnoreCase))
+                settings.DevicePageSettings = [.. InitialDevicePageSettings];
+            settings.Version = 5;
+        }
+
+        if (settings.Version == 5)
+        {
+            settings.Language = NormalizeLanguage(settings.Language);
+            settings.Version = 6;
+        }
+
+        if (settings.Version == 6)
+        {
+            settings.CustomPowerPreset ??= new PowerPresetSettings();
+            settings.Version = 7;
+        }
+
         Normalize(settings);
         return new SettingsMigrationResult(settings, true);
     }
@@ -52,7 +96,9 @@ public static class AppSettingsMigrator
     {
         settings.Modules ??= [];
         settings.Settings ??= [];
+        settings.DevicePageSettings ??= [];
         settings.Favorites ??= [];
+        settings.CustomPowerPreset ??= new PowerPresetSettings();
         settings.Modules = settings.Modules
             .Where(m => !string.IsNullOrWhiteSpace(m.Id))
             .GroupBy(m => m.Id, StringComparer.OrdinalIgnoreCase)
@@ -67,5 +113,17 @@ public static class AppSettingsMigrator
             .Where(id => !string.IsNullOrWhiteSpace(id))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
+        settings.DevicePageSettings = settings.DevicePageSettings
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        settings.Language = NormalizeLanguage(settings.Language);
+    }
+
+    private static string NormalizeLanguage(string? language)
+    {
+        if (string.Equals(language, "ja-JP", StringComparison.OrdinalIgnoreCase)) return "ja-JP";
+        if (string.Equals(language, "en-US", StringComparison.OrdinalIgnoreCase)) return "en-US";
+        return "system";
     }
 }

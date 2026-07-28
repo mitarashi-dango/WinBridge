@@ -25,7 +25,7 @@ public partial class App : Application
         DispatcherUnhandledException += (_, args) =>
         {
             _logger?.Error("UIで予期しないエラーが発生しました。", args.Exception);
-            MessageBox.Show("予期しない問題が発生しました。アプリを続行できる場合があります。",
+            MessageBox.Show(L.T("予期しない問題が発生しました。アプリを続行できる場合があります。"),
                 "WinBridge", MessageBoxButton.OK, MessageBoxImage.Error);
             args.Handled = true;
         };
@@ -34,16 +34,22 @@ public partial class App : Application
         _logger.Info("アプリを起動しました。");
         var settingsService = new AppSettingsService(_logger);
         var settings = await settingsService.LoadAsync();
+        LocalizationService.Initialize(settings.Language);
         var moduleService = new ModuleService(settingsService, settings, _logger);
         await moduleService.LoadDefinitionsAsync();
-        var settingCatalog = new SettingCatalogService(settingsService, settings, _logger);
+        var settingCatalog = new SettingCatalogService(
+            settingsService, settings, _logger, new SettingAvailabilityService());
         await settingCatalog.LoadAsync();
+        var devicePageSettings = new DevicePageSettingsService(
+            settingsService, settings, settingCatalog, _logger);
 
         var launcher = new WindowsSettingsLauncher(_logger);
         var main = new MainViewModel(
             moduleService,
             settingCatalog,
+            devicePageSettings,
             new PowerSettingsService(_logger),
+            new PowerPresetService(settingsService, settings),
             launcher,
             new ExplorerSettingsService(_logger),
             new WindowsUpdateStatusService(_logger),

@@ -66,15 +66,15 @@ public sealed class ExplorerViewModel : ObservableObject
                     $"{ex.GetType().Name}: {ex.Message}"));
             }
         }
-        else if (target == "folders") _report(_launcher.OpenControlPanel("/name Microsoft.FolderOptions"));
+        else if (target == "folders") _report(_launcher.OpenFolderOptions());
         else _report(_launcher.Open(target));
     }
 
     private async Task RestartAsync()
     {
         var answer = MessageBox.Show(
-            "エクスプローラーを再起動します。\n\nタスクバーやデスクトップが一時的に消え、数秒後に再表示されます。\n\n実行しますか？",
-            "再起動の確認", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            L.T("エクスプローラーを再起動します。\n\nタスクバーやデスクトップが一時的に消え、数秒後に再表示されます。\n\n実行しますか？"),
+            L.T("再起動の確認"), MessageBoxButton.YesNo, MessageBoxImage.Warning);
         if (answer != MessageBoxResult.Yes) return;
         _report(await _service.RestartExplorerAsync());
     }

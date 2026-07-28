@@ -11,8 +11,8 @@ public sealed class ModuleDefinition : ObservableObject
     private bool _isFavorite;
 
     public required string Id { get; init; }
-    public required string DisplayName { get; init; }
-    public required string Description { get; init; }
+    public required string DisplayName { get; set; }
+    public required string Description { get; set; }
     public string Icon { get; init; } = "⚙";
     public bool IsAvailable { get; init; } = true;
     public bool RequiresAdministrator { get; init; }

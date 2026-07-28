@@ -1,10 +1,11 @@
 <UserControl x:Class="WinBridge.Views.HomeView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:WinBridge.Localization">
   <ScrollViewer VerticalScrollBarVisibility="Auto">
     <StackPanel MaxWidth="820" HorizontalAlignment="Left">
-      <TextBlock Text="ホーム" FontSize="30" FontWeight="SemiBold"/>
-      <TextBlock Text="必要なWindows設定へ、ここから迷わず移動できます。" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,22"/>
+      <TextBlock Text="{loc:Loc 'ホーム'}" FontSize="30" FontWeight="SemiBold"/>
+      <TextBlock Text="{loc:Loc '必要なWindows設定へ、ここから迷わず移動できます。'}" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,22"/>
 
       <StackPanel>
         <StackPanel.Style>
@@ -13,7 +14,7 @@
             <Style.Triggers><DataTrigger Binding="{Binding Favorites.Count}" Value="0"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers>
           </Style>
         </StackPanel.Style>
-        <TextBlock Text="お気に入りの機能" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,10"/>
+        <TextBlock Text="{loc:Loc 'お気に入りの機能'}" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,10"/>
         <ItemsControl ItemsSource="{Binding Favorites}">
           <ItemsControl.ItemTemplate>
             <DataTemplate>
@@ -26,8 +27,8 @@
         </ItemsControl>
       </StackPanel>
 
-      <TextBlock Text="追加したWindows設定" FontSize="20" FontWeight="SemiBold" Margin="0,8,0,10"/>
-      <TextBlock Text="まだWindows設定が追加されていません。必要な設定だけを選んで追加できます。"
+      <TextBlock Text="{loc:Loc '追加したWindows設定'}" FontSize="20" FontWeight="SemiBold" Margin="0,8,0,10"/>
+      <TextBlock Text="{loc:Loc 'まだWindows設定が追加されていません。必要な設定だけを選んで追加できます。'}"
                  Foreground="{StaticResource MutedBrush}" Margin="0,0,0,8">
         <TextBlock.Style>
           <Style TargetType="TextBlock">
@@ -64,10 +65,10 @@
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ItemsControl>
-      <Button Content="Windows設定を追加・整理" Command="{Binding OpenSettingsCatalogCommand}"
+      <Button Content="{loc:Loc 'Windows設定を追加・整理'}" Command="{Binding OpenSettingsCatalogCommand}"
               HorizontalAlignment="Left" Margin="0,0,0,22"/>
 
-      <TextBlock Text="機能モジュール" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,10"/>
+      <TextBlock Text="{loc:Loc '機能モジュール'}" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,10"/>
       <ItemsControl ItemsSource="{Binding Cards}">
         <ItemsControl.ItemTemplate>
           <DataTemplate>
@@ -79,13 +80,13 @@
                   <TextBlock Text="{Binding Module.DisplayName}" FontSize="20" FontWeight="SemiBold"/>
                   <TextBlock Text="{Binding Module.Description}" Foreground="{StaticResource MutedBrush}" Margin="0,5,0,0"/>
                 </StackPanel>
-                <Button Grid.Column="2" Content="開く" Command="{Binding OpenCommand}" VerticalAlignment="Center"/>
+                <Button Grid.Column="2" Content="{loc:Loc '開く'}" Command="{Binding OpenCommand}" VerticalAlignment="Center"/>
               </Grid>
             </Border>
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ItemsControl>
-      <TextBlock Text="表示中の機能がありません。「表示する機能」から再表示できます。"
+      <TextBlock Text="{loc:Loc '表示中の機能がありません。「表示する機能」から再表示できます。'}"
                  Margin="0,18" Foreground="{StaticResource MutedBrush}">
         <TextBlock.Style>
           <Style TargetType="TextBlock">
@@ -94,7 +95,7 @@
           </Style>
         </TextBlock.Style>
       </TextBlock>
-      <Button Content="表示する機能を変更" Command="{Binding OpenModuleSettingsCommand}" HorizontalAlignment="Left" Margin="0,8,0,20"/>
+      <Button Content="{loc:Loc '表示する機能を変更'}" Command="{Binding OpenModuleSettingsCommand}" HorizontalAlignment="Left" Margin="0,8,0,20"/>
     </StackPanel>
   </ScrollViewer>
 </UserControl>

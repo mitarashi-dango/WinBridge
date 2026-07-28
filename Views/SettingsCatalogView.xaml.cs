@@ -18,6 +18,16 @@ public partial class SettingsCatalogView : UserControl
             viewModel.SaveCommand.Execute(null);
     }
 
+    private void NestedList_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        e.Handled = true;
+        PageScrollViewer.RaiseEvent(new MouseWheelEventArgs(e.MouseDevice, e.Timestamp, e.Delta)
+        {
+            RoutedEvent = Mouse.MouseWheelEvent,
+            Source = sender
+        });
+    }
+
     private void SelectedList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e) =>
         _dragStart = e.GetPosition(null);
 
