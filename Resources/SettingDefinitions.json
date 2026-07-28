@@ -1,0 +1,380 @@
+[
+  {
+    "id": "system.display",
+    "displayName": "ディスプレイ",
+    "description": "明るさ、拡大率、画面配置を設定します",
+    "category": "システム",
+    "icon": "▣",
+    "target": "ms-settings:display",
+    "keywords": ["画面", "モニター", "明るさ", "拡大率"]
+  },
+  {
+    "id": "system.sound",
+    "displayName": "サウンド",
+    "description": "出力・入力デバイスと音量を設定します",
+    "category": "システム",
+    "icon": "♪",
+    "target": "ms-settings:sound",
+    "keywords": ["音", "スピーカー", "マイク", "音量"]
+  },
+  {
+    "id": "system.volume-mixer",
+    "displayName": "音量ミキサー",
+    "description": "アプリごとの音量と出力先を調整します",
+    "category": "システム",
+    "icon": "≋",
+    "target": "ms-settings:apps-volume",
+    "keywords": ["アプリ", "音量", "ミキサー"]
+  },
+  {
+    "id": "system.notifications",
+    "displayName": "通知",
+    "description": "アプリやWindowsからの通知を設定します",
+    "category": "システム",
+    "icon": "◉",
+    "target": "ms-settings:notifications",
+    "keywords": ["お知らせ", "集中モード"]
+  },
+  {
+    "id": "system.power",
+    "displayName": "電源とバッテリー",
+    "description": "電源モードや画面・スリープを確認します",
+    "category": "システム",
+    "icon": "◐",
+    "target": "ms-settings:powersleep",
+    "keywords": ["スリープ", "バッテリー", "省電力"]
+  },
+  {
+    "id": "system.storage",
+    "displayName": "ストレージ",
+    "description": "使用量、一時ファイル、空き容量を確認します",
+    "category": "システム",
+    "icon": "▤",
+    "target": "ms-settings:storagesense",
+    "keywords": ["容量", "ディスク", "一時ファイル"]
+  },
+  {
+    "id": "system.about",
+    "displayName": "バージョン情報",
+    "description": "PC名、Windows仕様、システム情報を確認します",
+    "category": "システム",
+    "icon": "ⓘ",
+    "target": "ms-settings:about",
+    "keywords": ["PC情報", "Windows", "メモリ", "CPU"]
+  },
+  {
+    "id": "devices.bluetooth",
+    "displayName": "Bluetooth",
+    "description": "Bluetooth機器の追加と接続を設定します",
+    "category": "デバイス",
+    "icon": "ᛒ",
+    "target": "ms-settings:bluetooth",
+    "keywords": ["無線", "イヤホン", "ペアリング"]
+  },
+  {
+    "id": "devices.printers",
+    "displayName": "プリンターとスキャナー",
+    "description": "プリンターやスキャナーを追加・管理します",
+    "category": "デバイス",
+    "icon": "▧",
+    "target": "ms-settings:printers",
+    "keywords": ["印刷", "スキャン"]
+  },
+  {
+    "id": "devices.mouse",
+    "displayName": "マウス",
+    "description": "ボタン、ポインター速度、スクロールを設定します",
+    "category": "デバイス",
+    "icon": "◒",
+    "target": "ms-settings:mousetouchpad",
+    "keywords": ["ポインター", "スクロール", "タッチパッド"]
+  },
+  {
+    "id": "devices.microphone",
+    "displayName": "入力マイク",
+    "description": "既定の入力マイクと音量を設定します",
+    "category": "デバイス",
+    "icon": "♩",
+    "target": "ms-settings:sound-defaultinputproperties",
+    "keywords": ["録音", "音声", "入力"]
+  },
+  {
+    "id": "devices.usb",
+    "displayName": "USB",
+    "description": "USB機器の接続通知を設定します",
+    "category": "デバイス",
+    "icon": "⌁",
+    "target": "ms-settings:usb",
+    "keywords": ["接続", "外付け"]
+  },
+  {
+    "id": "devices.camera",
+    "displayName": "カメラ",
+    "description": "接続カメラの映像と既定値を設定します",
+    "category": "デバイス",
+    "icon": "◙",
+    "target": "ms-settings:camera",
+    "keywords": ["Webカメラ", "映像"]
+  },
+  {
+    "id": "devices.typing",
+    "displayName": "入力",
+    "description": "入力候補、自動修正、タッチキーボードを設定します",
+    "category": "デバイス",
+    "icon": "⌨",
+    "target": "ms-settings:typing",
+    "keywords": ["キーボード", "文字", "入力候補"]
+  },
+  {
+    "id": "network.status",
+    "displayName": "ネットワーク",
+    "description": "接続状態とネットワーク設定を確認します",
+    "category": "ネットワーク",
+    "icon": "◎",
+    "target": "ms-settings:network-status",
+    "keywords": ["インターネット", "接続"]
+  },
+  {
+    "id": "network.wifi",
+    "displayName": "Wi-Fi",
+    "description": "Wi-Fi接続と利用可能なネットワークを設定します",
+    "category": "ネットワーク",
+    "icon": "⌁",
+    "target": "ms-settings:network-wifi",
+    "keywords": ["無線LAN", "SSID"]
+  },
+  {
+    "id": "network.ethernet",
+    "displayName": "イーサネット",
+    "description": "有線ネットワーク接続を設定します",
+    "category": "ネットワーク",
+    "icon": "↔",
+    "target": "ms-settings:network-ethernet",
+    "keywords": ["有線LAN", "IP"]
+  },
+  {
+    "id": "network.vpn",
+    "displayName": "VPN",
+    "description": "VPN接続を追加・管理します",
+    "category": "ネットワーク",
+    "icon": "◇",
+    "target": "ms-settings:network-vpn",
+    "keywords": ["接続", "リモート"]
+  },
+  {
+    "id": "network.proxy",
+    "displayName": "プロキシ",
+    "description": "ネットワークのプロキシ設定を確認します",
+    "category": "ネットワーク",
+    "icon": "⇄",
+    "target": "ms-settings:network-proxy",
+    "keywords": ["サーバー", "ネットワーク"]
+  },
+  {
+    "id": "network.hotspot",
+    "displayName": "モバイル ホットスポット",
+    "description": "インターネット接続を他の機器と共有します",
+    "category": "ネットワーク",
+    "icon": "◌",
+    "target": "ms-settings:network-mobilehotspot",
+    "keywords": ["共有", "テザリング"]
+  },
+  {
+    "id": "personalization.background",
+    "displayName": "背景",
+    "description": "デスクトップの背景画像や色を設定します",
+    "category": "個人用設定",
+    "icon": "▨",
+    "target": "ms-settings:personalization-background",
+    "keywords": ["壁紙", "デスクトップ"]
+  },
+  {
+    "id": "personalization.colors",
+    "displayName": "色",
+    "description": "Windowsの色とライト・ダークモードを設定します",
+    "category": "個人用設定",
+    "icon": "●",
+    "target": "ms-settings:personalization-colors",
+    "keywords": ["テーマ", "ダークモード"]
+  },
+  {
+    "id": "personalization.themes",
+    "displayName": "テーマ",
+    "description": "背景、色、サウンドをまとめて変更します",
+    "category": "個人用設定",
+    "icon": "◆",
+    "target": "ms-settings:themes",
+    "keywords": ["外観", "デザイン"]
+  },
+  {
+    "id": "personalization.lockscreen",
+    "displayName": "ロック画面",
+    "description": "ロック画面の画像や状態表示を設定します",
+    "category": "個人用設定",
+    "icon": "▢",
+    "target": "ms-settings:lockscreen",
+    "keywords": ["サインイン", "背景"]
+  },
+  {
+    "id": "personalization.taskbar",
+    "displayName": "タスクバー",
+    "description": "タスクバーの項目と動作を設定します",
+    "category": "個人用設定",
+    "icon": "▬",
+    "target": "ms-settings:taskbar",
+    "keywords": ["アイコン", "配置"]
+  },
+  {
+    "id": "personalization.start",
+    "displayName": "スタート",
+    "description": "スタートメニューの表示内容を設定します",
+    "category": "個人用設定",
+    "icon": "⊞",
+    "target": "ms-settings:personalization-start",
+    "keywords": ["メニュー", "おすすめ"]
+  },
+  {
+    "id": "apps.installed",
+    "displayName": "インストールされているアプリ",
+    "description": "アプリの一覧、修復、アンインストールを開きます",
+    "category": "アプリ",
+    "icon": "▦",
+    "target": "ms-settings:appsfeatures",
+    "keywords": ["プログラム", "削除", "アプリ一覧"]
+  },
+  {
+    "id": "apps.defaults",
+    "displayName": "既定のアプリ",
+    "description": "ファイルやリンクを開く既定アプリを設定します",
+    "category": "アプリ",
+    "icon": "☆",
+    "target": "ms-settings:defaultapps",
+    "keywords": ["関連付け", "ブラウザー"]
+  },
+  {
+    "id": "apps.startup",
+    "displayName": "スタートアップ アプリ",
+    "description": "サインイン時に自動起動するアプリを設定します",
+    "category": "アプリ",
+    "icon": "▷",
+    "target": "ms-settings:startupapps",
+    "keywords": ["自動起動", "起動"]
+  },
+  {
+    "id": "apps.optional-features",
+    "displayName": "オプション機能",
+    "description": "Windowsの追加機能を確認・管理します",
+    "category": "アプリ",
+    "icon": "＋",
+    "target": "ms-settings:optionalfeatures",
+    "keywords": ["Windows機能", "追加"]
+  },
+  {
+    "id": "accounts.info",
+    "displayName": "ユーザー情報",
+    "description": "現在のWindowsユーザー情報を確認します",
+    "category": "アカウント",
+    "icon": "♙",
+    "target": "ms-settings:yourinfo",
+    "keywords": ["ユーザー", "アカウント"]
+  },
+  {
+    "id": "accounts.signin",
+    "displayName": "サインイン オプション",
+    "description": "PIN、顔認証、指紋、パスワードを設定します",
+    "category": "アカウント",
+    "icon": "◇",
+    "target": "ms-settings:signinoptions",
+    "keywords": ["Windows Hello", "PIN", "パスワード"]
+  },
+  {
+    "id": "time.datetime",
+    "displayName": "日付と時刻",
+    "description": "日時、タイムゾーン、自動調整を設定します",
+    "category": "時刻と言語",
+    "icon": "◷",
+    "target": "ms-settings:dateandtime",
+    "keywords": ["時計", "タイムゾーン"]
+  },
+  {
+    "id": "time.language",
+    "displayName": "言語と地域",
+    "description": "表示言語、地域、キーボードを設定します",
+    "category": "時刻と言語",
+    "icon": "文",
+    "target": "ms-settings:regionlanguage",
+    "keywords": ["日本語", "キーボード", "地域"]
+  },
+  {
+    "id": "accessibility.display",
+    "displayName": "アクセシビリティ：表示",
+    "description": "文字サイズや視覚効果を調整します",
+    "category": "アクセシビリティ",
+    "icon": "A",
+    "target": "ms-settings:easeofaccess-display",
+    "keywords": ["文字サイズ", "見やすさ"]
+  },
+  {
+    "id": "accessibility.keyboard",
+    "displayName": "アクセシビリティ：キーボード",
+    "description": "固定キーやスクリーンキーボードを設定します",
+    "category": "アクセシビリティ",
+    "icon": "⌨",
+    "target": "ms-settings:easeofaccess-keyboard",
+    "keywords": ["固定キー", "フィルターキー"]
+  },
+  {
+    "id": "accessibility.mouse",
+    "displayName": "アクセシビリティ：マウス",
+    "description": "マウスキーとポインター操作を設定します",
+    "category": "アクセシビリティ",
+    "icon": "◒",
+    "target": "ms-settings:easeofaccess-mouse",
+    "keywords": ["マウスキー", "ポインター"]
+  },
+  {
+    "id": "privacy.location",
+    "displayName": "位置情報",
+    "description": "アプリの位置情報アクセスを設定します",
+    "category": "プライバシー",
+    "icon": "⌖",
+    "target": "ms-settings:privacy-location",
+    "keywords": ["GPS", "アクセス許可"]
+  },
+  {
+    "id": "privacy.camera",
+    "displayName": "カメラのアクセス許可",
+    "description": "カメラを使用できるアプリを設定します",
+    "category": "プライバシー",
+    "icon": "◙",
+    "target": "ms-settings:privacy-webcam",
+    "keywords": ["権限", "アプリ"]
+  },
+  {
+    "id": "privacy.microphone",
+    "displayName": "マイクのアクセス許可",
+    "description": "マイクを使用できるアプリを設定します",
+    "category": "プライバシー",
+    "icon": "♩",
+    "target": "ms-settings:privacy-microphone",
+    "keywords": ["権限", "録音", "アプリ"]
+  },
+  {
+    "id": "update.main",
+    "displayName": "Windows Update",
+    "description": "更新プログラムを確認します",
+    "category": "Windows Update",
+    "icon": "↻",
+    "target": "ms-settings:windowsupdate",
+    "keywords": ["更新", "アップデート"]
+  },
+  {
+    "id": "update.history",
+    "displayName": "更新履歴",
+    "description": "インストールされた更新履歴を確認します",
+    "category": "Windows Update",
+    "icon": "≡",
+    "target": "ms-settings:windowsupdate-history",
+    "keywords": ["更新", "履歴"]
+  }
+]

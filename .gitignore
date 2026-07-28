@@ -1,0 +1,9 @@
+bin/
+obj/
+artifacts/
+**/bin/
+**/obj/
+.codex-manual-cache/
+WinBridge-win-x64-portable/
+Gemini_Generated_Image_*.png
+*.user

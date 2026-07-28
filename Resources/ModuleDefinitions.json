@@ -1,0 +1,57 @@
+[
+  {
+    "id": "power",
+    "displayName": "画面とスリープ",
+    "description": "画面OFFとスリープまでの時間を確認・変更します",
+    "icon": "◐",
+    "order": 1,
+    "isAvailable": true,
+    "requiresAdministrator": false,
+    "settingsUri": "ms-settings:powersleep",
+    "safetyClass": "DirectChange"
+  },
+  {
+    "id": "windows-update",
+    "displayName": "Windows Update",
+    "description": "更新、履歴、再起動に関するWindowsの正規画面を開きます",
+    "icon": "↻",
+    "order": 2,
+    "isAvailable": true,
+    "requiresAdministrator": false,
+    "settingsUri": "ms-settings:windowsupdate",
+    "safetyClass": "OpenWindowsSettings"
+  },
+  {
+    "id": "search",
+    "displayName": "スタートと検索",
+    "description": "検索設定と、よくある問題への対処を案内します",
+    "icon": "⌕",
+    "order": 3,
+    "isAvailable": true,
+    "requiresAdministrator": false,
+    "settingsUri": "ms-settings:search",
+    "safetyClass": "OpenWindowsSettings"
+  },
+  {
+    "id": "explorer",
+    "displayName": "エクスプローラー",
+    "description": "ファイル表示設定と安全な再起動を行います",
+    "icon": "▣",
+    "order": 4,
+    "isAvailable": true,
+    "requiresAdministrator": false,
+    "settingsUri": "ms-settings:storage",
+    "safetyClass": "DirectChange"
+  },
+  {
+    "id": "devices",
+    "displayName": "デバイスと接続",
+    "description": "デバイスマネージャー、Bluetooth、プリンター、USB、カメラ、マウス、マイクをまとめて確認します",
+    "icon": "⌁",
+    "order": 5,
+    "isAvailable": true,
+    "requiresAdministrator": false,
+    "settingsUri": "ms-settings:connecteddevices",
+    "safetyClass": "OpenWindowsSettings"
+  }
+]

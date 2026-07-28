@@ -1,0 +1,50 @@
+<UserControl x:Class="WinBridge.Views.ModuleSettingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+      <TextBlock Text="表示する機能" FontSize="30" FontWeight="SemiBold"/>
+      <TextBlock Text="チェックを外すとホームと左側メニューから隠れます。Windowsの機能自体は削除されません。"
+                 Foreground="{StaticResource MutedBrush}" Margin="0,4,0,6"/>
+      <TextBlock Text="カードをドラッグするか、上下ボタンで並べ替えられます。"
+                 Foreground="{StaticResource MutedBrush}" Margin="0,0,0,20"/>
+      <ListBox x:Name="ModuleList" ItemsSource="{Binding Modules}" Background="Transparent" BorderThickness="0"
+               AllowDrop="True" PreviewMouseLeftButtonDown="ModuleList_PreviewMouseLeftButtonDown"
+               PreviewMouseMove="ModuleList_PreviewMouseMove" Drop="ModuleList_Drop">
+        <ListBox.ItemContainerStyle>
+          <Style TargetType="ListBoxItem">
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0"/>
+          </Style>
+        </ListBox.ItemContainerStyle>
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <Border Style="{StaticResource CardStyle}" Margin="0,0,0,10">
+              <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <StackPanel>
+                  <CheckBox IsChecked="{Binding IsVisible}" Click="VisibilityCheckBox_Click" FontSize="18" FontWeight="SemiBold" Padding="2">
+                    <TextBlock><Run Text="{Binding Icon}"/><Run Text="  "/><Run Text="{Binding DisplayName}"/></TextBlock>
+                  </CheckBox>
+                  <TextBlock Text="{Binding Description}" Foreground="{StaticResource MutedBrush}" Margin="25,5,8,0"/>
+                  <TextBlock Margin="25,5,8,0" FontSize="12" Foreground="{StaticResource MutedBrush}">
+                    <Run Text="安全分類: "/><Run Text="{Binding SafetyClass}"/>
+                  </TextBlock>
+                </StackPanel>
+                <CheckBox Grid.Column="1" Content="★ 自分用" IsChecked="{Binding IsFavorite}" Click="FavoriteCheckBox_Click"
+                          VerticalAlignment="Center" Margin="8"/>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                  <Button Content="↑" ToolTip="上へ" Command="{Binding DataContext.MoveUpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                  <Button Content="↓" ToolTip="下へ" Command="{Binding DataContext.MoveDownCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                </StackPanel>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <TextBlock Text="すべて非表示にしても、この管理画面は左下の「表示する機能」からいつでも開けます。"
+                 Foreground="{StaticResource MutedBrush}" Margin="0,8,0,20"/>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

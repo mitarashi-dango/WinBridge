@@ -1,0 +1,100 @@
+<UserControl x:Class="WinBridge.Views.HomeView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+      <TextBlock Text="ホーム" FontSize="30" FontWeight="SemiBold"/>
+      <TextBlock Text="必要なWindows設定へ、ここから迷わず移動できます。" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,22"/>
+
+      <StackPanel>
+        <StackPanel.Style>
+          <Style TargetType="StackPanel">
+            <Setter Property="Visibility" Value="Visible"/>
+            <Style.Triggers><DataTrigger Binding="{Binding Favorites.Count}" Value="0"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers>
+          </Style>
+        </StackPanel.Style>
+        <TextBlock Text="お気に入りの機能" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,10"/>
+        <ItemsControl ItemsSource="{Binding Favorites}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <Button Command="{Binding OpenCommand}" HorizontalContentAlignment="Left" Margin="0,0,8,10">
+                <TextBlock><Run Text="★ "/><Run Text="{Binding Module.DisplayName}"/></TextBlock>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+          <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+        </ItemsControl>
+      </StackPanel>
+
+      <TextBlock Text="追加したWindows設定" FontSize="20" FontWeight="SemiBold" Margin="0,8,0,10"/>
+      <TextBlock Text="まだWindows設定が追加されていません。必要な設定だけを選んで追加できます。"
+                 Foreground="{StaticResource MutedBrush}" Margin="0,0,0,8">
+        <TextBlock.Style>
+          <Style TargetType="TextBlock">
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding Settings.Count}" Value="0">
+                <Setter Property="Visibility" Value="Visible"/>
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </TextBlock.Style>
+      </TextBlock>
+      <ItemsControl ItemsSource="{Binding Settings}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Button Command="{Binding OpenCommand}" Width="245" MinHeight="70"
+                    HorizontalContentAlignment="Stretch" Margin="0,0,10,10">
+              <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="38"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Setting.Icon}" FontSize="23" VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                  <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="{Binding Setting.DisplayName}" FontWeight="SemiBold" FontSize="15"/>
+                    <TextBlock Text=" ★" Foreground="#E0A000" FontSize="15"
+                               Visibility="{Binding Setting.IsFavorite, Converter={StaticResource BoolToVisibility}}"/>
+                  </StackPanel>
+                  <TextBlock Text="{Binding Setting.Category}" FontSize="12" Foreground="{StaticResource MutedBrush}"/>
+                </StackPanel>
+              </Grid>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <Button Content="Windows設定を追加・整理" Command="{Binding OpenSettingsCatalogCommand}"
+              HorizontalAlignment="Left" Margin="0,0,0,22"/>
+
+      <TextBlock Text="機能モジュール" FontSize="20" FontWeight="SemiBold" Margin="0,0,0,10"/>
+      <ItemsControl ItemsSource="{Binding Cards}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Border Style="{StaticResource CardStyle}">
+              <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="54"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Module.Icon}" FontSize="30" VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1" Margin="4,0,20,0">
+                  <TextBlock Text="{Binding Module.DisplayName}" FontSize="20" FontWeight="SemiBold"/>
+                  <TextBlock Text="{Binding Module.Description}" Foreground="{StaticResource MutedBrush}" Margin="0,5,0,0"/>
+                </StackPanel>
+                <Button Grid.Column="2" Content="開く" Command="{Binding OpenCommand}" VerticalAlignment="Center"/>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <TextBlock Text="表示中の機能がありません。「表示する機能」から再表示できます。"
+                 Margin="0,18" Foreground="{StaticResource MutedBrush}">
+        <TextBlock.Style>
+          <Style TargetType="TextBlock">
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Style.Triggers><DataTrigger Binding="{Binding Cards.Count}" Value="0"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
+          </Style>
+        </TextBlock.Style>
+      </TextBlock>
+      <Button Content="表示する機能を変更" Command="{Binding OpenModuleSettingsCommand}" HorizontalAlignment="Left" Margin="0,8,0,20"/>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
