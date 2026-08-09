@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:loc="clr-namespace:WinBridge.Localization">
   <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <StackPanel MaxWidth="800" HorizontalAlignment="Left">
+    <StackPanel MaxWidth="800" HorizontalAlignment="Left" IsEnabled="{Binding IsInteractionEnabled}">
       <TextBlock Text="{loc:Loc '画面とスリープ'}" FontSize="30" FontWeight="SemiBold"/>
       <TextBlock Text="{loc:Loc 'Windowsで現在有効な電源プランの値を表示します。'}" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,20"/>
 

@@ -18,13 +18,19 @@ var tests = new (string Name, Func<Task> Run)[]
     ("デバイスページの設定を追加・解除できる", TestDevicePageSettingsAsync),
     ("全機能を非表示にしてデバイスと接続を再表示できる", TestModuleVisibilityAsync),
     ("お好み電源プリセットを保存して再利用できる", TestCustomPowerPresetAsync),
+    ("秒単位の電源設定を切り捨てず維持できる", TestPowerSecondsPreservedAsync),
+    ("秒単位の現在値を画面で正確に維持できる", TestPowerViewSecondsAsync),
     ("電源設定の途中失敗時に変更前の値へ戻せる", TestPowerRollbackAsync),
+    ("電源設定の反映不一致時に変更前の値へ戻せる", TestPowerReadbackMismatchAsync),
+    ("操作中に電源プランが変わった場合は安全に中止できる", TestPowerSchemeSwitchAsync),
+    ("異常に長い電源設定を拒否できる", TestPowerMaximumValidationAsync),
     ("画面起動先が確認済みURIだけを持つ", TestApprovedLaunchTargetsAsync),
     ("Windows画面の起動引数を分離できる", TestLauncherArgumentsAsync),
     ("設定URI以外をランチャーで拒否する", TestLauncherTargetValidationAsync),
     ("Windows標準コマンドをSystem32から起動する", TestSystemExecutableResolutionAsync),
     ("Windowsコマンドをタイムアウトできる", TestCommandTimeoutAsync),
     ("画面外のウィンドウ位置を表示領域へ戻せる", TestWindowBoundsAsync),
+    ("アプリのバージョンを画面用に整形できる", TestVersionDisplayAsync),
     ("配布設定がWindows 11・多言語・署名必須になっている", TestReleaseHardeningAsync),
     ("入れ子リストのマウスホイールをページへ転送する", TestNestedScrollRoutingAsync),
     ("画面文言に英語リソースの漏れがない", TestXamlTranslationsAsync),
@@ -176,6 +182,30 @@ static async Task TestXamlTranslationsAsync()
     }
     Assert(missing.Count == 0, $"英訳のない画面文言があります: {string.Join(", ", missing)}");
     Assert(unwrapped.Count == 0, $"ローカライズされていない画面文言があります: {string.Join(", ", unwrapped)}");
+
+    foreach (var fileName in new[]
+             {
+                 "Services/PowerPolicyAccessor.cs",
+                 "Services/PowerSettingsService.cs",
+                 "Services/PowerPresetService.cs",
+                 "ViewModels/PowerViewModel.cs"
+             })
+    {
+        var file = Path.Combine(AppContext.BaseDirectory, "SourceFiles",
+            fileName.Replace('/', Path.DirectorySeparatorChar));
+        var text = await File.ReadAllTextAsync(file);
+        foreach (Match match in Regex.Matches(text,
+                     @"(?:OperationResult(?:<[^>]+>)?\.(?:Success|Failure)|L\.(?:T|F))\(\s*""((?:\\.|[^""])*)""",
+                     RegexOptions.Singleline))
+        {
+            var source = Regex.Unescape(match.Groups[1].Value);
+            if (source.Length > 0 && Regex.IsMatch(source, @"[\u3040-\u30ff\u3400-\u9fff]") &&
+                !translations.ContainsKey(source))
+                missing.Add(source);
+        }
+    }
+    Assert(missing.Count == 0,
+        $"英訳のない電源設定文言があります: {string.Join(", ", missing)}");
 }
 
 static async Task TestConcurrentSaveAsync()
@@ -429,31 +459,168 @@ static async Task TestPowerRollbackAsync()
     var directory = CreateTemporaryDirectory();
     try
     {
-        var calls = new List<string[]>();
-        Task<OperationResult<string>> Run(string fileName, string[] arguments)
-        {
-            calls.Add([.. arguments]);
-            if (arguments[0] == "-query")
-                return Task.FromResult(OperationResult<string>.Success(
-                    "AC 0x00000258 DC 0x0000012c"));
-            if (arguments.SequenceEqual(["-change", "-standby-timeout-ac", "30"]))
-                return Task.FromResult(OperationResult<string>.Failure("テスト用の変更失敗"));
-            return Task.FromResult(OperationResult<string>.Success(""));
-        }
-
+        var policy = CreatePowerPolicy(600, 1800, 300, 900);
+        policy.FailOnWriteNumber = 2;
         var logger = new LoggingService(Path.Combine(directory, "logs"));
-        var service = new PowerSettingsService(logger, Run);
+        var service = new PowerSettingsService(logger, policy, () => false);
         var result = await service.ApplyAsync(new PowerSettings(
-            false, 15, 30, 10, 30));
+            false, 900, 1800, 600, 1800));
 
         Assert(!result.IsSuccess, "途中で失敗した電源設定が成功扱いになっています。");
         Assert(result.UserMessage.Contains("変更前の値へ戻しました", StringComparison.Ordinal),
             "電源設定を元へ戻したことが通知されていません。");
-        Assert(calls.Any(call =>
-                call.SequenceEqual(["-change", "-monitor-timeout-ac", "15"])),
+        Assert(policy.Writes.Any(write =>
+                write.Source == PowerSource.Ac &&
+                write.SettingId == PowerSettingsService.DisplayTimeoutId &&
+                write.Seconds == 900),
             "最初の電源設定変更が実行されていません。");
-        Assert(calls[^1].SequenceEqual(["-change", "-monitor-timeout-ac", "10"]),
-            "変更済みの電源設定が元の値へ戻されていません。");
+        Assert(policy.GetValue(PowerSettingsService.VideoSubgroupId,
+                   PowerSettingsService.DisplayTimeoutId, PowerSource.Ac) == 600 &&
+               policy.GetValue(PowerSettingsService.SleepSubgroupId,
+                   PowerSettingsService.SleepTimeoutId, PowerSource.Ac) == 1800,
+            "変更済みの秒単位設定が元の値へ戻されていません。");
+    }
+    finally
+    {
+        DeleteTemporaryDirectory(directory);
+    }
+}
+
+static async Task TestPowerSecondsPreservedAsync()
+{
+    var directory = CreateTemporaryDirectory();
+    try
+    {
+        var policy = CreatePowerPolicy(30, 59, 45, 90);
+        var logger = new LoggingService(Path.Combine(directory, "logs"));
+        var service = new PowerSettingsService(logger, policy, () => true);
+
+        var current = await service.GetAsync();
+        Assert(current.IsSuccess && current.Value is not null,
+            "秒単位の電源設定を読み取れません。");
+        var settings = current.Value ?? throw new InvalidOperationException("電源設定がありません。");
+        Assert(settings.AcDisplaySeconds == 30 && settings.AcSleepSeconds == 59 &&
+               settings.DcDisplaySeconds == 45 && settings.DcSleepSeconds == 90,
+            "1分未満の値が切り捨てられています。");
+
+        var result = await service.ApplyAsync(settings);
+        Assert(result.IsSuccess, "秒単位の現在値をそのまま適用できません。");
+        Assert(policy.Writes.Take(4).Select(write => write.Seconds)
+                .SequenceEqual([30u, 59u, 45u, 90u]),
+            "秒単位の値が別の値へ変換されて書き込まれています。");
+    }
+    finally
+    {
+        DeleteTemporaryDirectory(directory);
+    }
+}
+
+static async Task TestPowerViewSecondsAsync()
+{
+    var directory = CreateTemporaryDirectory();
+    try
+    {
+        LocalizationService.Initialize("ja-JP");
+        var policy = CreatePowerPolicy(30, 59, 45, 90);
+        var logger = new LoggingService(Path.Combine(directory, "logs"));
+        var power = new PowerSettingsService(logger, policy, () => true);
+        var appSettings = new AppSettings();
+        var settingsService = new AppSettingsService(logger, directory);
+        var preset = new PowerPresetService(settingsService, appSettings);
+        var reports = new List<OperationResult>();
+        var viewModel = new WinBridge.ViewModels.PowerViewModel(power, preset, reports.Add);
+
+        await viewModel.RefreshAsync();
+        Assert(viewModel.AcDisplay?.Seconds == 30 &&
+               viewModel.AcDisplay.Label.Contains("30秒", StringComparison.Ordinal),
+            "画面上で30秒の現在値が「なし」へ変換されています。");
+
+        policy.SetValue(PowerSettingsService.VideoSubgroupId,
+            PowerSettingsService.DisplayTimeoutId, PowerSource.Ac, 31);
+        await viewModel.RefreshAsync();
+        Assert(viewModel.AcDisplay?.Seconds == 31 &&
+               viewModel.DisplayChoices.All(choice => choice.Seconds != 30),
+            "再読み込み後に古い秒単位の現在値が残っています。");
+        Assert(!viewModel.IsBusy && viewModel.IsInteractionEnabled,
+            "読み込み完了後も電源設定の操作が無効になっています。");
+    }
+    finally
+    {
+        DeleteTemporaryDirectory(directory);
+    }
+}
+
+static async Task TestPowerReadbackMismatchAsync()
+{
+    var directory = CreateTemporaryDirectory();
+    try
+    {
+        var policy = CreatePowerPolicy(600, 1800, 300, 900);
+        policy.ReturnMismatchedReadback = true;
+        var logger = new LoggingService(Path.Combine(directory, "logs"));
+        var service = new PowerSettingsService(logger, policy, () => false);
+
+        var result = await service.ApplyAsync(new PowerSettings(
+            false, 300, 600, 300, 900));
+
+        Assert(!result.IsSuccess, "反映値が異なる電源設定が成功扱いになっています。");
+        Assert(result.UserMessage.Contains("変更前の値へ戻しました", StringComparison.Ordinal),
+            "反映不一致後の復元が通知されていません。");
+        Assert(policy.GetValue(PowerSettingsService.VideoSubgroupId,
+                   PowerSettingsService.DisplayTimeoutId, PowerSource.Ac) == 600 &&
+               policy.GetValue(PowerSettingsService.SleepSubgroupId,
+                   PowerSettingsService.SleepTimeoutId, PowerSource.Ac) == 1800,
+            "反映不一致後に変更前の値へ戻っていません。");
+    }
+    finally
+    {
+        DeleteTemporaryDirectory(directory);
+    }
+}
+
+static async Task TestPowerSchemeSwitchAsync()
+{
+    var directory = CreateTemporaryDirectory();
+    try
+    {
+        var policy = CreatePowerPolicy(600, 1800, 300, 900);
+        var originalScheme = policy.ActiveScheme;
+        policy.SwitchSchemeOnActiveReadNumber = 3;
+        var logger = new LoggingService(Path.Combine(directory, "logs"));
+        var service = new PowerSettingsService(logger, policy, () => false);
+
+        var result = await service.ApplyAsync(new PowerSettings(
+            false, 300, 600, 300, 900));
+
+        Assert(!result.IsSuccess && result.UserMessage.Contains("電源プラン", StringComparison.Ordinal),
+            "操作中の電源プラン切り替えが検出されていません。");
+        Assert(policy.ActiveScheme != originalScheme,
+            "利用者が切り替えた電源プランを元へ戻してしまっています。");
+        Assert(policy.GetValue(PowerSettingsService.VideoSubgroupId,
+                   PowerSettingsService.DisplayTimeoutId, PowerSource.Ac, originalScheme) == 600,
+            "元の電源プランに途中の変更が残っています。");
+    }
+    finally
+    {
+        DeleteTemporaryDirectory(directory);
+    }
+}
+
+static async Task TestPowerMaximumValidationAsync()
+{
+    var directory = CreateTemporaryDirectory();
+    try
+    {
+        var policy = CreatePowerPolicy(600, 1800, 300, 900);
+        var logger = new LoggingService(Path.Combine(directory, "logs"));
+        var service = new PowerSettingsService(logger, policy, () => false);
+
+        var result = await service.ApplyAsync(new PowerSettings(
+            false, PowerSettingsService.MaximumTimeoutSeconds + 1, 600, 300, 900));
+
+        Assert(!result.IsSuccess, "異常に長い電源設定が許可されています。");
+        Assert(policy.Writes.Count == 0 && policy.ActiveReadCount == 0,
+            "不正な値の検証前にWindowsの電源設定へアクセスしています。");
     }
     finally
     {
@@ -568,6 +735,15 @@ static Task TestWindowBoundsAsync()
     return Task.CompletedTask;
 }
 
+static Task TestVersionDisplayAsync()
+{
+    Assert(WinBridge.ViewModels.MainViewModel.FormatVersion(new Version(1, 1, 1, 0)) == "v1.1.1",
+        "画面のバージョン表記がv1.1.1形式ではありません。");
+    Assert(WinBridge.ViewModels.MainViewModel.FormatVersion(null) == "",
+        "バージョンを取得できない場合の表示が安全ではありません。");
+    return Task.CompletedTask;
+}
+
 static async Task TestReleaseHardeningAsync()
 {
     var releaseFiles = Path.Combine(AppContext.BaseDirectory, "ReleaseFiles");
@@ -577,18 +753,24 @@ static async Task TestReleaseHardeningAsync()
     Assert(installer.Contains("Name: \"english\"", StringComparison.Ordinal) &&
            installer.Contains("Name: \"japanese\"", StringComparison.Ordinal),
         "インストーラーに英語と日本語が登録されていません。");
+    Assert(installer.Contains("#define AppVersion \"1.1.1\"", StringComparison.Ordinal),
+        "インストーラーの既定バージョンが1.1.1ではありません。");
 
     var manifest = await File.ReadAllTextAsync(Path.Combine(releaseFiles, "app.manifest"));
-    Assert(manifest.Contains("assemblyIdentity version=\"1.1.0.0\"", StringComparison.Ordinal),
-        "アプリマニフェストのバージョンが1.1.0.0ではありません。");
+    Assert(manifest.Contains("assemblyIdentity version=\"1.1.1.0\"", StringComparison.Ordinal),
+        "アプリマニフェストのバージョンが1.1.1.0ではありません。");
 
     var packageScript = await File.ReadAllTextAsync(
         Path.Combine(releaseFiles, "package-release.ps1"));
+    Assert(packageScript.Contains("[string]$Version = \"1.1.1\"", StringComparison.Ordinal),
+        "配布スクリプトの既定バージョンが1.1.1ではありません。");
     Assert(packageScript.Contains("SigningCertificateThumbprint", StringComparison.Ordinal) &&
            packageScript.Contains("AllowUnsigned", StringComparison.Ordinal) &&
            packageScript.Contains("A trusted code-signing certificate is required",
                StringComparison.Ordinal),
         "正式な配布物でコード署名を必須にする処理がありません。");
+    Assert(typeof(WinBridge.App).Assembly.GetName().Version == new Version(1, 1, 1, 0),
+        "アプリ本体のアセンブリバージョンが1.1.1.0ではありません。");
 }
 
 static async Task TestSingleInstanceAsync()
@@ -622,8 +804,83 @@ static void Assert(bool condition, string message)
     if (!condition) throw new InvalidOperationException(message);
 }
 
+static FakePowerPolicyAccessor CreatePowerPolicy(
+    uint acDisplay, uint acSleep, uint dcDisplay, uint dcSleep)
+{
+    var policy = new FakePowerPolicyAccessor();
+    policy.SetValue(PowerSettingsService.VideoSubgroupId,
+        PowerSettingsService.DisplayTimeoutId, PowerSource.Ac, acDisplay);
+    policy.SetValue(PowerSettingsService.SleepSubgroupId,
+        PowerSettingsService.SleepTimeoutId, PowerSource.Ac, acSleep);
+    policy.SetValue(PowerSettingsService.VideoSubgroupId,
+        PowerSettingsService.DisplayTimeoutId, PowerSource.Dc, dcDisplay);
+    policy.SetValue(PowerSettingsService.SleepSubgroupId,
+        PowerSettingsService.SleepTimeoutId, PowerSource.Dc, dcSleep);
+    return policy;
+}
+
 sealed class TestAvailabilityService(bool conditionalAvailability) : ISettingAvailabilityService
 {
     public bool IsAvailable(SettingAvailability availability) =>
         availability == SettingAvailability.Always || conditionalAvailability;
 }
+
+sealed class FakePowerPolicyAccessor : IPowerPolicyAccessor
+{
+    private readonly Dictionary<(Guid SchemeId, Guid SubgroupId, Guid SettingId, PowerSource Source), uint>
+        _values = [];
+
+    public Guid ActiveScheme { get; private set; } = Guid.NewGuid();
+    public int ActiveReadCount { get; private set; }
+    public int? SwitchSchemeOnActiveReadNumber { get; set; }
+    public int? FailOnWriteNumber { get; set; }
+    public bool ReturnMismatchedReadback { get; set; }
+    public int ActivationCount { get; private set; }
+    public List<PowerWrite> Writes { get; } = [];
+
+    public OperationResult<Guid> GetActiveScheme()
+    {
+        ActiveReadCount++;
+        if (SwitchSchemeOnActiveReadNumber == ActiveReadCount)
+            ActiveScheme = Guid.NewGuid();
+        return OperationResult<Guid>.Success(ActiveScheme);
+    }
+
+    public OperationResult<uint> ReadValue(
+        Guid schemeId, Guid subgroupId, Guid settingId, PowerSource source)
+    {
+        if (!_values.TryGetValue((schemeId, subgroupId, settingId, source), out var value))
+            return OperationResult<uint>.Failure("テスト値がありません。");
+        if (ReturnMismatchedReadback && ActivationCount == 1 &&
+            settingId == PowerSettingsService.DisplayTimeoutId && source == PowerSource.Ac)
+            value++;
+        return OperationResult<uint>.Success(value);
+    }
+
+    public OperationResult WriteValue(
+        Guid schemeId, Guid subgroupId, Guid settingId, PowerSource source, uint seconds)
+    {
+        Writes.Add(new PowerWrite(schemeId, subgroupId, settingId, source, seconds));
+        if (FailOnWriteNumber == Writes.Count)
+            return OperationResult.Failure("テスト用の変更失敗");
+        _values[(schemeId, subgroupId, settingId, source)] = seconds;
+        return OperationResult.Success("");
+    }
+
+    public OperationResult ActivateScheme(Guid schemeId)
+    {
+        ActiveScheme = schemeId;
+        ActivationCount++;
+        return OperationResult.Success("");
+    }
+
+    public void SetValue(Guid subgroupId, Guid settingId, PowerSource source, uint seconds) =>
+        _values[(ActiveScheme, subgroupId, settingId, source)] = seconds;
+
+    public uint GetValue(
+        Guid subgroupId, Guid settingId, PowerSource source, Guid? schemeId = null) =>
+        _values[(schemeId ?? ActiveScheme, subgroupId, settingId, source)];
+}
+
+sealed record PowerWrite(
+    Guid SchemeId, Guid SubgroupId, Guid SettingId, PowerSource Source, uint Seconds);

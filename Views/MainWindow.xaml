@@ -29,7 +29,11 @@
         </StackPanel>
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <StackPanel>
-          <TextBlock Text="WinBridge" Foreground="White" FontSize="26" FontWeight="SemiBold" Margin="10,14,10,2"/>
+          <StackPanel Orientation="Horizontal" Margin="10,14,10,2">
+            <TextBlock Text="WinBridge" Foreground="White" FontSize="26" FontWeight="SemiBold"/>
+            <TextBlock Text="{Binding VersionText}" Foreground="#B9C8DB" FontSize="12"
+                       VerticalAlignment="Bottom" Margin="8,0,0,4"/>
+          </StackPanel>
           <TextBlock Text="{loc:Loc 'よく使うWindows設定'}" Foreground="#B9C8DB" Margin="10,0,10,22"/>
           <Button Content="{loc:Loc 'ホーム'}" HorizontalContentAlignment="Left"
                   Command="{Binding NavigateCommand}" CommandParameter="home"/>
