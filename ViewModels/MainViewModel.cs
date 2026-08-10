@@ -52,7 +52,7 @@ public sealed class MainViewModel : ObservableObject
         DevicePageSettingsService devicePageSettings,
         PowerSettingsService power, PowerPresetService powerPreset, WindowsSettingsLauncher launcher,
         ExplorerSettingsService explorer, WindowsUpdateStatusService updateStatus, SearchStatusService searchStatus,
-        DeviceStatusService deviceStatus)
+        DeviceStatusService deviceStatus, ExternalLinkService externalLinks)
     {
         _modules = modules;
         _settingCatalog = settingCatalog;
@@ -69,7 +69,7 @@ public sealed class MainViewModel : ObservableObject
         Devices = new DeviceViewModel(deviceStatus, devicePageSettings, launcher, Report);
         ModuleSettings = new ModuleSettingsViewModel(modules, RefreshNavigation, Report);
         SettingsCatalog = new SettingsCatalogViewModel(settingCatalog, RefreshSettings, Report);
-        AppPreferences = new AppPreferencesViewModel(modules, Report);
+        AppPreferences = new AppPreferencesViewModel(modules, externalLinks, Report);
         _pages["home"] = Home;
         _pages["power"] = Power;
         _pages["windows-update"] = WindowsUpdate;

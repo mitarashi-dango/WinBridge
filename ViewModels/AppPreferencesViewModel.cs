@@ -7,6 +7,7 @@ namespace WinBridge.ViewModels;
 public sealed class AppPreferencesViewModel : ObservableObject
 {
     private readonly ModuleService _modules;
+    private readonly ExternalLinkService _externalLinks;
     private readonly Action<OperationResult> _report;
     private LanguageOption? _selectedLanguage;
 
@@ -24,16 +25,20 @@ public sealed class AppPreferencesViewModel : ObservableObject
     }
 
     public AsyncRelayCommand SaveCommand { get; }
+    public RelayCommand OpenSupportPageCommand { get; }
 
-    public AppPreferencesViewModel(ModuleService modules, Action<OperationResult> report)
+    public AppPreferencesViewModel(ModuleService modules, ExternalLinkService externalLinks,
+        Action<OperationResult> report)
     {
         _modules = modules;
+        _externalLinks = externalLinks;
         _report = report;
         SelectedLanguage = Languages.FirstOrDefault(option =>
                                string.Equals(option.Value, modules.Settings.Language,
                                    StringComparison.OrdinalIgnoreCase))
                            ?? Languages[0];
         SaveCommand = new AsyncRelayCommand(SaveAsync);
+        OpenSupportPageCommand = new RelayCommand(() => _report(_externalLinks.OpenSupportPage()));
     }
 
     private async Task SaveAsync()

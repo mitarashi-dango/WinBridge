@@ -4,8 +4,8 @@
              xmlns:loc="clr-namespace:WinBridge.Localization">
   <ScrollViewer VerticalScrollBarVisibility="Auto">
     <StackPanel MaxWidth="800" HorizontalAlignment="Left">
-      <TextBlock Text="{loc:Loc '言語設定'}" FontSize="30" FontWeight="SemiBold"/>
-      <TextBlock Text="{loc:Loc 'WinBridgeの表示言語を設定します。Windowsの設定は変更しません。'}"
+      <TextBlock Text="{loc:Loc 'WinBridge の設定'}" FontSize="30" FontWeight="SemiBold"/>
+      <TextBlock Text="{loc:Loc 'アプリの表示方法と開発支援について設定・確認できます。Windowsの設定は変更しません。'}"
                  Foreground="{StaticResource MutedBrush}" Margin="0,4,0,20"/>
       <Border Style="{StaticResource CardStyle}">
         <StackPanel>
@@ -20,6 +20,20 @@
           <Button Content="{loc:Loc '言語設定を保存'}" Command="{Binding SaveCommand}"
                   HorizontalAlignment="Left" Background="{StaticResource AccentBrush}"
                   Foreground="White" FontWeight="SemiBold"/>
+        </StackPanel>
+      </Border>
+      <Border Style="{StaticResource CardStyle}" Margin="0,14,0,0">
+        <StackPanel>
+          <TextBlock Text="{loc:Loc 'WinBridgeの開発を支援'}" FontSize="20" FontWeight="SemiBold"/>
+          <TextBlock Text="{loc:Loc 'WinBridgeはすべての機能を無料で利用できます。気に入っていただけたら、今後の開発を任意で応援していただけるとうれしいです。'}"
+                     Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,6,0,6"/>
+          <TextBlock Text="{loc:Loc '支援の有無による機能差や特典はありません。'}"
+                     Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+          <Button Content="{loc:Loc 'Ko-fiで開発を支援'}" Command="{Binding OpenSupportPageCommand}"
+                  HorizontalAlignment="Left" Background="{StaticResource AccentBrush}"
+                  Foreground="White" FontWeight="SemiBold"/>
+          <TextBlock Text="{loc:Loc '外部のKo-fiページがブラウザーで開き、Ko-fiまたはPayPalが決済を処理します。'}"
+                     Foreground="{StaticResource MutedBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0"/>
         </StackPanel>
       </Border>
     </StackPanel>

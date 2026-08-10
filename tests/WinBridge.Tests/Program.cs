@@ -27,6 +27,7 @@ var tests = new (string Name, Func<Task> Run)[]
     ("画面起動先が確認済みURIだけを持つ", TestApprovedLaunchTargetsAsync),
     ("Windows画面の起動引数を分離できる", TestLauncherArgumentsAsync),
     ("設定URI以外をランチャーで拒否する", TestLauncherTargetValidationAsync),
+    ("開発支援リンクを公式Ko-fiページだけに制限する", TestSupportLinkValidationAsync),
     ("Windows標準コマンドをSystem32から起動する", TestSystemExecutableResolutionAsync),
     ("Windowsコマンドをタイムアウトできる", TestCommandTimeoutAsync),
     ("画面外のウィンドウ位置を表示領域へ戻せる", TestWindowBoundsAsync),
@@ -691,6 +692,33 @@ static Task TestLauncherTargetValidationAsync()
     }
 }
 
+static Task TestSupportLinkValidationAsync()
+{
+    var valid = ExternalLinkService.CreateSupportPageStartInfo("https://ko-fi.com/nioudachi");
+    Assert(valid.FileName == "https://ko-fi.com/nioudachi",
+        "公式Ko-fiページのURLが変換されています。");
+    Assert(valid.UseShellExecute, "支援ページが既定のブラウザーで開かれません。");
+
+    foreach (var invalid in new[]
+             {
+                 "http://ko-fi.com/nioudachi",
+                 "https://example.com/nioudachi",
+                 "https://ko-fi.com/another-account"
+             })
+    {
+        try
+        {
+            ExternalLinkService.CreateSupportPageStartInfo(invalid);
+            throw new InvalidOperationException($"許可されていない支援URLです: {invalid}");
+        }
+        catch (ArgumentException)
+        {
+        }
+    }
+
+    return Task.CompletedTask;
+}
+
 static Task TestSystemExecutableResolutionAsync()
 {
     var resolved = CommandRunner.ResolveSystemExecutable("powercfg.exe");
@@ -753,24 +781,24 @@ static async Task TestReleaseHardeningAsync()
     Assert(installer.Contains("Name: \"english\"", StringComparison.Ordinal) &&
            installer.Contains("Name: \"japanese\"", StringComparison.Ordinal),
         "インストーラーに英語と日本語が登録されていません。");
-    Assert(installer.Contains("#define AppVersion \"1.1.1\"", StringComparison.Ordinal),
-        "インストーラーの既定バージョンが1.1.1ではありません。");
+    Assert(installer.Contains("#define AppVersion \"1.1.3\"", StringComparison.Ordinal),
+        "インストーラーの既定バージョンが1.1.3ではありません。");
 
     var manifest = await File.ReadAllTextAsync(Path.Combine(releaseFiles, "app.manifest"));
-    Assert(manifest.Contains("assemblyIdentity version=\"1.1.1.0\"", StringComparison.Ordinal),
-        "アプリマニフェストのバージョンが1.1.1.0ではありません。");
+    Assert(manifest.Contains("assemblyIdentity version=\"1.1.3.0\"", StringComparison.Ordinal),
+        "アプリマニフェストのバージョンが1.1.3.0ではありません。");
 
     var packageScript = await File.ReadAllTextAsync(
         Path.Combine(releaseFiles, "package-release.ps1"));
-    Assert(packageScript.Contains("[string]$Version = \"1.1.1\"", StringComparison.Ordinal),
-        "配布スクリプトの既定バージョンが1.1.1ではありません。");
+    Assert(packageScript.Contains("[string]$Version = \"1.1.3\"", StringComparison.Ordinal),
+        "配布スクリプトの既定バージョンが1.1.3ではありません。");
     Assert(packageScript.Contains("SigningCertificateThumbprint", StringComparison.Ordinal) &&
            packageScript.Contains("AllowUnsigned", StringComparison.Ordinal) &&
            packageScript.Contains("A trusted code-signing certificate is required",
                StringComparison.Ordinal),
         "正式な配布物でコード署名を必須にする処理がありません。");
-    Assert(typeof(WinBridge.App).Assembly.GetName().Version == new Version(1, 1, 1, 0),
-        "アプリ本体のアセンブリバージョンが1.1.1.0ではありません。");
+    Assert(typeof(WinBridge.App).Assembly.GetName().Version == new Version(1, 1, 3, 0),
+        "アプリ本体のアセンブリバージョンが1.1.3.0ではありません。");
 }
 
 static async Task TestSingleInstanceAsync()
