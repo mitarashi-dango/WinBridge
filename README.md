@@ -2,6 +2,9 @@
 
 WinBridgeは、Windows 11の分散した設定を、分かりやすい日本語で1か所から扱うための中継アプリです。安全に変更できる設定だけをアプリ内で変更し、それ以外はWindowsの正規設定画面へ案内します。
 
+すべての機能を無料で利用できます。開発支援は任意で、アプリの「アプリ設定」から
+[Ko-fi](https://ko-fi.com/nioudachi)を開けます。支援の有無による機能差や特典はありません。
+
 ## 対応環境
 
 - Windows 11 x64
@@ -41,11 +44,33 @@ dotnet run -c Release
 
 ## 配布パッケージ
 
+### Microsoft Store（MSIX）
+
+Microsoft Storeへ提出するMSIXは、Partner Centerの「製品 ID の管理」に表示される
+`Package/Identity/Name`、`Package/Identity/Publisher`、発行元表示名を指定して生成します。
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\package-msix.ps1 `
+  -Version 1.1.3.0 `
+  -PackageIdentityName '<Partner CenterのPackage/Identity/Name>' `
+  -Publisher '<Partner CenterのPackage/Identity/Publisher>' `
+  -PublisherDisplayName '<Partner Centerの発行元表示名>'
+```
+
+成果物は `WinBridge-msix-v1.1.3.0\WinBridge-v1.1.3.0-x64.msix` に作成されます。
+提出用MSIXは署名せずに生成し、Microsoft Storeが提出後に署名します。
+
+WinBridgeは、エクスプローラーにファイル名拡張子と隠しファイルの変更を伝える必要があるため、
+MSIXマニフェストで `runFullTrust` と `unvirtualizedResources` を宣言し、レジストリ書き込みの
+仮想化だけを無効にしています。Store申請では、この用途を認定メモに記載してください。
+
+### EXEインストーラーとポータブルZIP
+
 Inno Setup 6または7をインストールしたWindows環境では、次のコマンドでポータブル版ZIP、ユーザー単位インストーラー、SHA-256一覧を同時に生成できます。
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\package-release.ps1 `
-  -Version 1.1.0 `
+  -Version 1.1.3 `
   -AllowUnsigned
 ```
 
@@ -53,11 +78,11 @@ powershell -ExecutionPolicy Bypass -File .\tools\package-release.ps1 `
 `-SigningCertificateThumbprint <証明書の拇印>` を指定できます。署名を省略する場合でも、
 成果物のファイル名は変わりません。
 
-成果物はプロジェクト直下の `WinBridge-release-v1.1.0` に作成されます。
+成果物はプロジェクト直下の `WinBridge-release-v1.1.3` に作成されます。
 
 ```text
-WinBridge-v1.1.0-win-x64-portable.zip
-WinBridge-v1.1.0-win-x64-Setup.exe
+WinBridge-v1.1.3-win-x64-portable.zip
+WinBridge-v1.1.3-win-x64-Setup.exe
 SHA256SUMS.txt
 ```
 
@@ -66,8 +91,8 @@ SHA256SUMS.txt
 ダウンロード後の整合性は次のように確認できます。
 
 ```powershell
-Get-FileHash .\WinBridge-v1.1.0-win-x64-portable.zip -Algorithm SHA256
-Get-FileHash .\WinBridge-v1.1.0-win-x64-Setup.exe -Algorithm SHA256
+Get-FileHash .\WinBridge-v1.1.3-win-x64-portable.zip -Algorithm SHA256
+Get-FileHash .\WinBridge-v1.1.3-win-x64-Setup.exe -Algorithm SHA256
 ```
 
 表示された値がGitHub Releaseに添付された `SHA256SUMS.txt` と一致することを確認してください。

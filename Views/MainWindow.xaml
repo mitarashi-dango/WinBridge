@@ -20,7 +20,7 @@
     <Border Grid.RowSpan="2" Background="#132238">
       <DockPanel Margin="14">
         <StackPanel DockPanel.Dock="Bottom">
-          <Button Content="{loc:Loc '言語設定'}" HorizontalContentAlignment="Left"
+          <Button Content="{loc:Loc 'アプリ設定'}" HorizontalContentAlignment="Left"
                   Command="{Binding NavigateCommand}" CommandParameter="app-preferences"/>
           <Button Content="{loc:Loc 'Windows設定を追加'}" HorizontalContentAlignment="Left"
                   Command="{Binding NavigateCommand}" CommandParameter="settings-catalog"/>
