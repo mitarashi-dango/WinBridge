@@ -42,5 +42,8 @@
     <None Include="..\..\app.manifest"
           Link="ReleaseFiles\app.manifest"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\packaging\msix\AppxManifest.template.xml"
+          Link="ReleaseFiles\AppxManifest.template.xml"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

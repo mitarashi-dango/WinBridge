@@ -27,6 +27,8 @@ var tests = new (string Name, Func<Task> Run)[]
     ("画面起動先が確認済みURIだけを持つ", TestApprovedLaunchTargetsAsync),
     ("Windows画面の起動引数を分離できる", TestLauncherArgumentsAsync),
     ("設定URI以外をランチャーで拒否する", TestLauncherTargetValidationAsync),
+    ("MSIX実行判定の戻り値を安全に分類できる", TestPackageIdentityClassificationAsync),
+    ("Store版ではExplorer設定の直接変更を拒否する", TestStoreExplorerRestrictionAsync),
     ("開発支援リンクを公式Ko-fiページだけに制限する", TestSupportLinkValidationAsync),
     ("Windows標準コマンドをSystem32から起動する", TestSystemExecutableResolutionAsync),
     ("Windowsコマンドをタイムアウトできる", TestCommandTimeoutAsync),
@@ -692,6 +694,40 @@ static Task TestLauncherTargetValidationAsync()
     }
 }
 
+static Task TestPackageIdentityClassificationAsync()
+{
+    Assert(!PackageIdentityService.IsPackagedResult(PackageIdentityService.AppModelErrorNoPackage),
+        "パッケージ外実行がMSIXとして判定されています。");
+    Assert(PackageIdentityService.IsPackagedResult(122),
+        "MSIXで返るバッファー不足コードをパッケージ外として扱っています。");
+    Assert(PackageIdentityService.IsPackagedResult(0),
+        "正常なパッケージ情報取得をパッケージ外として扱っています。");
+    return Task.CompletedTask;
+}
+
+static Task TestStoreExplorerRestrictionAsync()
+{
+    var directory = CreateTemporaryDirectory();
+    try
+    {
+        var service = new ExplorerSettingsService(new LoggingService(directory), false);
+        Assert(!service.CanChangeSettingsDirectly,
+            "Store版でExplorer設定の直接変更が有効です。");
+        Assert(!service.Get().IsSuccess,
+            "Store版でExplorerレジストリの読み取りを実行できます。");
+        Assert(!service.Apply(true, true).IsSuccess,
+            "Store版でExplorerレジストリの書き込みを実行できます。");
+        Assert(!service.Undo().IsSuccess,
+            "Store版でExplorerレジストリの復元を実行できます。");
+    }
+    finally
+    {
+        DeleteTemporaryDirectory(directory);
+    }
+
+    return Task.CompletedTask;
+}
+
 static Task TestSupportLinkValidationAsync()
 {
     var valid = ExternalLinkService.CreateSupportPageStartInfo("https://ko-fi.com/nioudachi");
@@ -781,24 +817,32 @@ static async Task TestReleaseHardeningAsync()
     Assert(installer.Contains("Name: \"english\"", StringComparison.Ordinal) &&
            installer.Contains("Name: \"japanese\"", StringComparison.Ordinal),
         "インストーラーに英語と日本語が登録されていません。");
-    Assert(installer.Contains("#define AppVersion \"1.1.3\"", StringComparison.Ordinal),
-        "インストーラーの既定バージョンが1.1.3ではありません。");
+    Assert(installer.Contains("#define AppVersion \"1.1.4\"", StringComparison.Ordinal),
+        "インストーラーの既定バージョンが1.1.4ではありません。");
 
     var manifest = await File.ReadAllTextAsync(Path.Combine(releaseFiles, "app.manifest"));
-    Assert(manifest.Contains("assemblyIdentity version=\"1.1.3.0\"", StringComparison.Ordinal),
-        "アプリマニフェストのバージョンが1.1.3.0ではありません。");
+    Assert(manifest.Contains("assemblyIdentity version=\"1.1.4.0\"", StringComparison.Ordinal),
+        "アプリマニフェストのバージョンが1.1.4.0ではありません。");
+
+    var msixManifest = await File.ReadAllTextAsync(
+        Path.Combine(releaseFiles, "AppxManifest.template.xml"));
+    Assert(msixManifest.Contains("Name=\"runFullTrust\"", StringComparison.Ordinal),
+        "パッケージ化されたWPFアプリに必要なrunFullTrustがありません。");
+    Assert(!msixManifest.Contains("unvirtualizedResources", StringComparison.Ordinal) &&
+           !msixManifest.Contains("RegistryWriteVirtualization", StringComparison.Ordinal),
+        "Storeで承認されていないレジストリ仮想化解除がMSIXマニフェストに残っています。");
 
     var packageScript = await File.ReadAllTextAsync(
         Path.Combine(releaseFiles, "package-release.ps1"));
-    Assert(packageScript.Contains("[string]$Version = \"1.1.3\"", StringComparison.Ordinal),
-        "配布スクリプトの既定バージョンが1.1.3ではありません。");
+    Assert(packageScript.Contains("[string]$Version = \"1.1.4\"", StringComparison.Ordinal),
+        "配布スクリプトの既定バージョンが1.1.4ではありません。");
     Assert(packageScript.Contains("SigningCertificateThumbprint", StringComparison.Ordinal) &&
            packageScript.Contains("AllowUnsigned", StringComparison.Ordinal) &&
            packageScript.Contains("A trusted code-signing certificate is required",
                StringComparison.Ordinal),
         "正式な配布物でコード署名を必須にする処理がありません。");
-    Assert(typeof(WinBridge.App).Assembly.GetName().Version == new Version(1, 1, 3, 0),
-        "アプリ本体のアセンブリバージョンが1.1.3.0ではありません。");
+    Assert(typeof(WinBridge.App).Assembly.GetName().Version == new Version(1, 1, 4, 0),
+        "アプリ本体のアセンブリバージョンが1.1.4.0ではありません。");
 }
 
 static async Task TestSingleInstanceAsync()

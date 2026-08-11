@@ -13,6 +13,8 @@ public sealed class ExplorerViewModel : ObservableObject
     private bool _showExtensions, _showHidden;
     public bool ShowExtensions { get => _showExtensions; set => SetProperty(ref _showExtensions, value); }
     public bool ShowHidden { get => _showHidden; set => SetProperty(ref _showHidden, value); }
+    public bool CanChangeSettingsDirectly => _service.CanChangeSettingsDirectly;
+    public bool UsesWindowsFolderOptions => !CanChangeSettingsDirectly;
     public RelayCommand OpenCommand { get; }
     public RelayCommand ApplyCommand { get; }
     public RelayCommand RefreshCommand { get; }
@@ -24,14 +26,23 @@ public sealed class ExplorerViewModel : ObservableObject
     {
         _service = service; _launcher = launcher; _report = report;
         OpenCommand = new RelayCommand(Open);
-        ApplyCommand = new RelayCommand(Apply);
-        RefreshCommand = new RelayCommand(Refresh);
-        UndoCommand = new RelayCommand(() => { var r = _service.Undo(); _report(r); if (r.IsSuccess) Refresh(); });
+        ApplyCommand = new RelayCommand(Apply, () => CanChangeSettingsDirectly);
+        RefreshCommand = new RelayCommand(Refresh, () => CanChangeSettingsDirectly);
+        UndoCommand = new RelayCommand(
+            () => { var r = _service.Undo(); _report(r); if (r.IsSuccess) Refresh(); },
+            () => CanChangeSettingsDirectly);
         RestartCommand = new AsyncRelayCommand(RestartAsync);
     }
 
     public void Refresh()
     {
+        if (!CanChangeSettingsDirectly)
+        {
+            _report(OperationResult.Success(
+                "Microsoft Store版では、Windowsのフォルダー オプションからファイル表示設定を変更できます。"));
+            return;
+        }
+
         var result = _service.Get();
         if (result.IsSuccess && result.Value is not null)
         {

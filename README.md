@@ -51,18 +51,21 @@ Microsoft Storeへ提出するMSIXは、Partner Centerの「製品 ID の管理�
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\package-msix.ps1 `
-  -Version 1.1.3.0 `
+  -Version 1.1.4.0 `
   -PackageIdentityName '<Partner CenterのPackage/Identity/Name>' `
   -Publisher '<Partner CenterのPackage/Identity/Publisher>' `
   -PublisherDisplayName '<Partner Centerの発行元表示名>'
 ```
 
-成果物は `WinBridge-msix-v1.1.3.0\WinBridge-v1.1.3.0-x64.msix` に作成されます。
+成果物は `WinBridge-msix-v1.1.4.0\WinBridge-v1.1.4.0-x64.msix` に作成されます。
 提出用MSIXは署名せずに生成し、Microsoft Storeが提出後に署名します。
 
-WinBridgeは、エクスプローラーにファイル名拡張子と隠しファイルの変更を伝える必要があるため、
-MSIXマニフェストで `runFullTrust` と `unvirtualizedResources` を宣言し、レジストリ書き込みの
-仮想化だけを無効にしています。Store申請では、この用途を認定メモに記載してください。
+Microsoft Store版はパッケージ実行を自動判定し、エクスプローラーのレジストリを直接変更しません。
+ファイル名拡張子と隠しファイルは、Windows標準の「フォルダー オプション」を開いて変更します。
+MSIXマニフェストはパッケージ化されたWPFアプリに必要な `runFullTrust` だけを宣言し、
+`unvirtualizedResources` やレジストリ仮想化の無効化は宣言しません。
+再提出時の確認事項と認定メモ案は
+[`packaging/msix/CERTIFICATION_NOTES.md`](packaging/msix/CERTIFICATION_NOTES.md) にあります。
 
 ### EXEインストーラーとポータブルZIP
 
@@ -70,7 +73,7 @@ Inno Setup 6または7をインストールしたWindows環境では、次のコ
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\package-release.ps1 `
-  -Version 1.1.3 `
+  -Version 1.1.4 `
   -AllowUnsigned
 ```
 
@@ -78,11 +81,11 @@ powershell -ExecutionPolicy Bypass -File .\tools\package-release.ps1 `
 `-SigningCertificateThumbprint <証明書の拇印>` を指定できます。署名を省略する場合でも、
 成果物のファイル名は変わりません。
 
-成果物はプロジェクト直下の `WinBridge-release-v1.1.3` に作成されます。
+成果物はプロジェクト直下の `WinBridge-release-v1.1.4` に作成されます。
 
 ```text
-WinBridge-v1.1.3-win-x64-portable.zip
-WinBridge-v1.1.3-win-x64-Setup.exe
+WinBridge-v1.1.4-win-x64-portable.zip
+WinBridge-v1.1.4-win-x64-Setup.exe
 SHA256SUMS.txt
 ```
 
@@ -91,8 +94,8 @@ SHA256SUMS.txt
 ダウンロード後の整合性は次のように確認できます。
 
 ```powershell
-Get-FileHash .\WinBridge-v1.1.3-win-x64-portable.zip -Algorithm SHA256
-Get-FileHash .\WinBridge-v1.1.3-win-x64-Setup.exe -Algorithm SHA256
+Get-FileHash .\WinBridge-v1.1.4-win-x64-portable.zip -Algorithm SHA256
+Get-FileHash .\WinBridge-v1.1.4-win-x64-Setup.exe -Algorithm SHA256
 ```
 
 表示された値がGitHub Releaseに添付された `SHA256SUMS.txt` と一致することを確認してください。
@@ -124,7 +127,7 @@ Windows検索、検索のアクセス許可、インデックス、スタート�
 
 ### エクスプローラー
 
-ファイル名拡張子と隠しファイルの現在値を読み込み、変更します。直前のアプリ内変更は「元に戻す」が使えます（アプリ終了まで）。エクスプローラー再起動は確認後に実行し、終了処理に失敗しても再起動を試みます。
+EXEインストーラー版とポータブルZIP版では、ファイル名拡張子と隠しファイルの現在値を読み込み、変更します。直前のアプリ内変更は「元に戻す」が使えます（アプリ終了まで）。Microsoft Store版ではレジストリを直接変更せず、Windows標準の「フォルダー オプション」へ案内します。エクスプローラー再起動は確認後に実行し、終了処理に失敗しても再起動を試みます。
 
 ### デバイスと接続
 
@@ -163,7 +166,8 @@ Windows検索、検索のアクセス許可、インデックス、スタート�
 
 ## レジストリ変更
 
-変更するのは現在のユーザーの次の2値だけです。
+EXEインストーラー版とポータブルZIP版で変更するのは、現在のユーザーの次の2値だけです。
+Microsoft Store版はこれらの値を直接変更しません。
 
 ```text
 HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced
