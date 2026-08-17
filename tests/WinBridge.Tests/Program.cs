@@ -28,6 +28,7 @@ var tests = new (string Name, Func<Task> Run)[]
     ("Windows画面の起動引数を分離できる", TestLauncherArgumentsAsync),
     ("設定URI以外をランチャーで拒否する", TestLauncherTargetValidationAsync),
     ("MSIX実行判定の戻り値を安全に分類できる", TestPackageIdentityClassificationAsync),
+    ("GitHub配布版ではExplorer表示設定を維持する", TestGitHubExplorerControlsAsync),
     ("Store版ではExplorer設定の直接変更を拒否する", TestStoreExplorerRestrictionAsync),
     ("開発支援リンクを公式Ko-fiページだけに制限する", TestSupportLinkValidationAsync),
     ("Windows標準コマンドをSystem32から起動する", TestSystemExecutableResolutionAsync),
@@ -703,6 +704,29 @@ static Task TestPackageIdentityClassificationAsync()
     Assert(PackageIdentityService.IsPackagedResult(0),
         "正常なパッケージ情報取得をパッケージ外として扱っています。");
     return Task.CompletedTask;
+}
+
+static async Task TestGitHubExplorerControlsAsync()
+{
+    var directory = CreateTemporaryDirectory();
+    try
+    {
+        var service = new ExplorerSettingsService(new LoggingService(directory), true);
+        Assert(service.CanChangeSettingsDirectly,
+            "GitHub配布版でExplorer設定の直接変更が無効です。");
+
+        var view = await File.ReadAllTextAsync(
+            Path.Combine(AppContext.BaseDirectory, "Views", "ExplorerView.xaml"));
+        Assert(view.Contains("Visibility=\"{Binding CanChangeSettingsDirectly", StringComparison.Ordinal),
+            "GitHub配布版でExplorer表示設定カードが表示されません。");
+        Assert(view.Contains("'ファイル名拡張子を表示する'", StringComparison.Ordinal) &&
+               view.Contains("'隠しファイルを表示する'", StringComparison.Ordinal),
+            "GitHub配布版のExplorer表示設定が画面から削除されています。");
+    }
+    finally
+    {
+        DeleteTemporaryDirectory(directory);
+    }
 }
 
 static Task TestStoreExplorerRestrictionAsync()
