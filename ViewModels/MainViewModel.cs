@@ -22,6 +22,7 @@ public sealed class MainViewModel : ObservableObject
     public ObservableCollection<SettingDefinition> SelectedSettings => _settingCatalog.SelectedSettings;
     public ObservableCollection<SettingDefinition> PinnedSettings { get; } = [];
     public ObservableCollection<SettingCategoryViewModel> PinnedSettingGroups { get; } = [];
+    public string VersionText { get; } = FormatVersion(typeof(MainViewModel).Assembly.GetName().Version);
     public object? CurrentViewModel { get => _currentViewModel; private set => SetProperty(ref _currentViewModel, value); }
     public string StatusMessage { get => _statusMessage; private set => SetProperty(ref _statusMessage, value); }
     public bool HasError { get => _hasError; private set => SetProperty(ref _hasError, value); }
@@ -43,11 +44,15 @@ public sealed class MainViewModel : ObservableObject
     public SettingsCatalogViewModel SettingsCatalog { get; }
     public AppPreferencesViewModel AppPreferences { get; }
 
+    internal static string FormatVersion(Version? version) => version is null
+        ? ""
+        : $"v{version.Major}.{version.Minor}.{Math.Max(0, version.Build)}";
+
     public MainViewModel(ModuleService modules, SettingCatalogService settingCatalog,
         DevicePageSettingsService devicePageSettings,
         PowerSettingsService power, PowerPresetService powerPreset, WindowsSettingsLauncher launcher,
         ExplorerSettingsService explorer, WindowsUpdateStatusService updateStatus, SearchStatusService searchStatus,
-        DeviceStatusService deviceStatus)
+        DeviceStatusService deviceStatus, ExternalLinkService externalLinks)
     {
         _modules = modules;
         _settingCatalog = settingCatalog;
@@ -64,7 +69,7 @@ public sealed class MainViewModel : ObservableObject
         Devices = new DeviceViewModel(deviceStatus, devicePageSettings, launcher, Report);
         ModuleSettings = new ModuleSettingsViewModel(modules, RefreshNavigation, Report);
         SettingsCatalog = new SettingsCatalogViewModel(settingCatalog, RefreshSettings, Report);
-        AppPreferences = new AppPreferencesViewModel(modules, Report);
+        AppPreferences = new AppPreferencesViewModel(modules, externalLinks, Report);
         _pages["home"] = Home;
         _pages["power"] = Power;
         _pages["windows-update"] = WindowsUpdate;

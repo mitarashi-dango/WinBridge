@@ -21,6 +21,18 @@
     <None Include="..\..\Views\*.xaml"
           Link="Views\%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Services\PowerPolicyAccessor.cs"
+          Link="SourceFiles\Services\PowerPolicyAccessor.cs"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Services\PowerSettingsService.cs"
+          Link="SourceFiles\Services\PowerSettingsService.cs"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Services\PowerPresetService.cs"
+          Link="SourceFiles\Services\PowerPresetService.cs"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\ViewModels\PowerViewModel.cs"
+          Link="SourceFiles\ViewModels\PowerViewModel.cs"
+          CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\installer\WinBridge.iss"
           Link="ReleaseFiles\WinBridge.iss"
           CopyToOutputDirectory="PreserveNewest" />
@@ -29,6 +41,9 @@
           CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\app.manifest"
           Link="ReleaseFiles\app.manifest"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\packaging\msix\AppxManifest.template.xml"
+          Link="ReleaseFiles\AppxManifest.template.xml"
           CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

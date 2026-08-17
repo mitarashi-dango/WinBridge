@@ -54,7 +54,8 @@ public partial class App : Application
             new ExplorerSettingsService(_logger),
             new WindowsUpdateStatusService(_logger),
             new SearchStatusService(_logger),
-            new DeviceStatusService(_logger));
+            new DeviceStatusService(_logger),
+            new ExternalLinkService(_logger));
 
         var window = new MainWindow { DataContext = main };
         RestoreWindow(window, settings);

@@ -12,11 +12,20 @@ public sealed class ExplorerSettingsService
     private const string AdvancedKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced";
     private readonly LoggingService _logger;
     private ExplorerSettings? _undoValue;
+    public bool CanChangeSettingsDirectly { get; }
 
-    public ExplorerSettingsService(LoggingService logger) => _logger = logger;
+    public ExplorerSettingsService(LoggingService logger, bool? canChangeSettingsDirectly = null)
+    {
+        _logger = logger;
+        CanChangeSettingsDirectly = canChangeSettingsDirectly ?? !PackageIdentityService.IsPackaged;
+    }
 
     public OperationResult<ExplorerSettings> Get()
     {
+        if (!CanChangeSettingsDirectly)
+            return OperationResult<ExplorerSettings>.Failure(
+                "Microsoft Store版では、ファイル表示設定をフォルダー オプションから変更してください。");
+
         try
         {
             using var key = Registry.CurrentUser.OpenSubKey(AdvancedKey);
@@ -35,6 +44,9 @@ public sealed class ExplorerSettingsService
 
     public OperationResult Apply(bool showExtensions, bool showHidden)
     {
+        if (!CanChangeSettingsDirectly)
+            return StorePackageRestriction();
+
         try
         {
             var before = Get();
@@ -55,9 +67,15 @@ public sealed class ExplorerSettingsService
         }
     }
 
-    public OperationResult Undo() => _undoValue is null
-        ? OperationResult.Failure("元に戻せる変更がありません。")
-        : ApplyWithoutUndo(_undoValue);
+    public OperationResult Undo()
+    {
+        if (!CanChangeSettingsDirectly)
+            return StorePackageRestriction();
+
+        return _undoValue is null
+            ? OperationResult.Failure("元に戻せる変更がありません。")
+            : ApplyWithoutUndo(_undoValue);
+    }
 
     private OperationResult ApplyWithoutUndo(ExplorerSettings value)
     {
@@ -101,6 +119,10 @@ public sealed class ExplorerSettingsService
 
     private static void NotifyShell() =>
         SHChangeNotify(0x08000000, 0x0000, IntPtr.Zero, IntPtr.Zero);
+
+    private static OperationResult StorePackageRestriction() =>
+        OperationResult.Failure(
+            "Microsoft Store版では、ファイル表示設定をフォルダー オプションから変更してください。");
 
     [DllImport("shell32.dll")]
     private static extern void SHChangeNotify(uint eventId, uint flags, IntPtr item1, IntPtr item2);
