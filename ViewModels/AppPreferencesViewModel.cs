@@ -15,7 +15,10 @@ public sealed class AppPreferencesViewModel : ObservableObject
     [
         new("system", L.T("Windowsの表示言語に合わせる")),
         new("ja-JP", "日本語"),
-        new("en-US", "English")
+        new("en-US", "English"),
+        new("zh-TW", "中文（繁體）"),
+        new("zh-CN", "中文（简体）"),
+        new("es-ES", "Español")
     ];
 
     public LanguageOption? SelectedLanguage

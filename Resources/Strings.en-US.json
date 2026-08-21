@@ -14,7 +14,7 @@
   "開発支援ページを開けませんでした。ブラウザーの設定を確認してください。": "Could not open the development support page. Check your browser settings.",
   "表示言語": "Display language",
   "Windowsの表示言語に合わせる": "Follow the Windows display language",
-  "「Windowsの表示言語に合わせる」では、日本語環境だけ日本語を表示し、それ以外の環境では英語を表示します。": "When following Windows, Japanese is used only for Japanese display languages; all other languages use English.",
+  "「Windowsの表示言語に合わせる」では、対応している言語を自動的に選び、それ以外の環境では英語を表示します。": "When following Windows, WinBridge automatically uses a supported language and falls back to English for other languages.",
   "変更はWinBridgeの再起動後に反映されます。": "Changes take effect after restarting WinBridge.",
   "言語設定を保存": "Save language setting",
   "表示言語を保存しました。WinBridgeを再起動すると反映されます。": "The display language was saved. Restart WinBridge to apply it.",

@@ -37,7 +37,7 @@ var tests = new (string Name, Func<Task> Run)[]
     ("アプリのバージョンを画面用に整形できる", TestVersionDisplayAsync),
     ("配布設定がWindows 11・多言語・署名必須になっている", TestReleaseHardeningAsync),
     ("入れ子リストのマウスホイールをページへ転送する", TestNestedScrollRoutingAsync),
-    ("画面文言に英語リソースの漏れがない", TestXamlTranslationsAsync),
+    ("画面文言の4翻訳リソースが揃っている", TestXamlTranslationsAsync),
     ("2個目の起動から既存起動へ通知できる", TestSingleInstanceAsync),
     ("表示言語をWindows言語から判定できる", TestLanguageSelectionAsync)
 };
@@ -125,27 +125,48 @@ static Task TestLanguageSelectionAsync()
     Assert(LocalizationService.ResolveLanguage("system", "ja-JP") == "ja-JP",
         "日本語のWindowsで日本語が選ばれません。");
     Assert(LocalizationService.ResolveLanguage("system", "fr-FR") == "en-US",
-        "日本語以外のWindowsで英語が選ばれません。");
+        "未対応言語のWindowsで英語へフォールバックしません。");
+    Assert(LocalizationService.ResolveLanguage("system", "es-MX") == "es-ES",
+        "スペイン語のWindowsでスペイン語が選ばれません。");
+    Assert(LocalizationService.ResolveLanguage("system", "zh-CN") == "zh-CN" &&
+           LocalizationService.ResolveLanguage("system", "zh-Hans") == "zh-CN",
+        "簡体字中国語のWindowsで簡体字が選ばれません。");
+    Assert(LocalizationService.ResolveLanguage("system", "zh-TW") == "zh-TW" &&
+           LocalizationService.ResolveLanguage("system", "zh-HK") == "zh-TW" &&
+           LocalizationService.ResolveLanguage("system", "zh-Hant") == "zh-TW",
+        "繁体字中国語のWindowsで繁体字が選ばれません。");
     Assert(LocalizationService.ResolveLanguage("ja-JP", "en-US") == "ja-JP",
         "日本語固定の設定が優先されません。");
-    Assert(LocalizationService.ResolveLanguage("en-US", "ja-JP") == "en-US",
-        "英語固定の設定が優先されません。");
+    Assert(LocalizationService.ResolveLanguage("zh-Hans", "ja-JP") == "zh-CN" &&
+           LocalizationService.ResolveLanguage("zh-Hant", "ja-JP") == "zh-TW",
+        "中国語の言語コード別名を正規化できません。");
 
     var automatic = AppSettingsMigrator.Migrate(new AppSettings { Version = 5 }).Settings;
     Assert(automatic.Language == "system", "旧設定の言語がWindows自動判定になりません。");
-    LocalizationService.Initialize("en-US");
-    Assert(L.T("ホーム") == "Home", "英語リソースを読み込めません。");
-    var definition = new SettingDefinition
+
+    foreach (var (language, home, settingName, category) in new[]
+             {
+                 ("en-US", "Home", "Mouse", "Devices"),
+                 ("es-ES", "Inicio", "Ratón", "Dispositivos"),
+                 ("zh-CN", "主页", "鼠标", "设备"),
+                 ("zh-TW", "首頁", "滑鼠", "裝置")
+             })
     {
-        Id = "devices.mouse",
-        DisplayName = "マウス",
-        Description = "マウスを設定します",
-        Category = "デバイス",
-        Target = "ms-settings:mouse"
-    };
-    CatalogLocalizationService.Localize(definition);
-    Assert(definition.DisplayName == "Mouse" && definition.Category == "Devices",
-        "設定カタログを英語化できません。");
+        LocalizationService.Initialize(language);
+        Assert(L.T("ホーム") == home, $"{language} の翻訳リソースを読み込めません。");
+        var definition = new SettingDefinition
+        {
+            Id = "devices.mouse",
+            DisplayName = "マウス",
+            Description = "マウスを設定します",
+            Category = "デバイス",
+            Target = "ms-settings:mouse"
+        };
+        CatalogLocalizationService.Localize(definition);
+        Assert(definition.DisplayName == settingName && definition.Category == category,
+            $"{language} の設定カタログをローカライズできません。");
+    }
+
     LocalizationService.Initialize("ja-JP");
     Assert(L.T("ホーム") == "ホーム", "日本語へ戻せません。");
     return Task.CompletedTask;
@@ -169,6 +190,28 @@ static async Task TestXamlTranslationsAsync()
     var translations = JsonSerializer.Deserialize<Dictionary<string, string>>(
         await File.ReadAllTextAsync(
             Path.Combine(AppContext.BaseDirectory, "Resources", "Strings.en-US.json"))) ?? [];
+    foreach (var language in new[] { "es-ES", "zh-CN", "zh-TW" })
+    {
+        var localized = JsonSerializer.Deserialize<Dictionary<string, string>>(
+            await File.ReadAllTextAsync(
+                Path.Combine(AppContext.BaseDirectory, "Resources", $"Strings.{language}.json"))) ?? [];
+        var missingKeys = translations.Keys.Except(localized.Keys).ToArray();
+        var extraKeys = localized.Keys.Except(translations.Keys).ToArray();
+        var blankValues = localized.Where(item => string.IsNullOrWhiteSpace(item.Value))
+            .Select(item => item.Key).ToArray();
+        var placeholderMismatches = translations.Keys.Where(key =>
+                Placeholders(key) != Placeholders(localized.GetValueOrDefault(key, "")))
+            .ToArray();
+        Assert(missingKeys.Length == 0,
+            $"{language} に不足する翻訳キーがあります: {string.Join(", ", missingKeys)}");
+        Assert(extraKeys.Length == 0,
+            $"{language} に英語辞書と一致しないキーがあります: {string.Join(", ", extraKeys)}");
+        Assert(blankValues.Length == 0,
+            $"{language} に空の翻訳があります: {string.Join(", ", blankValues)}");
+        Assert(placeholderMismatches.Length == 0,
+            $"{language} の書式プレースホルダーが一致しません: {string.Join(", ", placeholderMismatches)}");
+    }
+
     var missing = new HashSet<string>();
     var unwrapped = new List<string>();
     foreach (var file in Directory.EnumerateFiles(
@@ -210,6 +253,11 @@ static async Task TestXamlTranslationsAsync()
     }
     Assert(missing.Count == 0,
         $"英訳のない電源設定文言があります: {string.Join(", ", missing)}");
+
+    static string Placeholders(string value) =>
+        string.Join("|", Regex.Matches(value, @"\{[^}]+\}")
+            .Select(match => match.Value)
+            .OrderBy(value => value, StringComparer.Ordinal));
 }
 
 static async Task TestConcurrentSaveAsync()
@@ -839,34 +887,40 @@ static async Task TestReleaseHardeningAsync()
     Assert(installer.Contains("MinVersion=10.0.22000", StringComparison.Ordinal),
         "インストーラーの最低OSがWindows 11になっていません。");
     Assert(installer.Contains("Name: \"english\"", StringComparison.Ordinal) &&
-           installer.Contains("Name: \"japanese\"", StringComparison.Ordinal),
-        "インストーラーに英語と日本語が登録されていません。");
-    Assert(installer.Contains("#define AppVersion \"1.1.4\"", StringComparison.Ordinal),
-        "インストーラーの既定バージョンが1.1.4ではありません。");
+           installer.Contains("Name: \"japanese\"", StringComparison.Ordinal) &&
+           installer.Contains("Name: \"spanish\"", StringComparison.Ordinal) &&
+           installer.Contains("Name: \"chinesesimplified\"", StringComparison.Ordinal) &&
+           installer.Contains("Name: \"chinesetraditional\"", StringComparison.Ordinal),
+        "インストーラーに対応する5言語が登録されていません。");
+    Assert(installer.Contains("#define AppVersion \"1.1.5\"", StringComparison.Ordinal),
+        "インストーラーの既定バージョンが1.1.5ではありません。");
 
     var manifest = await File.ReadAllTextAsync(Path.Combine(releaseFiles, "app.manifest"));
-    Assert(manifest.Contains("assemblyIdentity version=\"1.1.4.0\"", StringComparison.Ordinal),
-        "アプリマニフェストのバージョンが1.1.4.0ではありません。");
+    Assert(manifest.Contains("assemblyIdentity version=\"1.1.5.0\"", StringComparison.Ordinal),
+        "アプリマニフェストのバージョンが1.1.5.0ではありません。");
 
     var msixManifest = await File.ReadAllTextAsync(
         Path.Combine(releaseFiles, "AppxManifest.template.xml"));
     Assert(msixManifest.Contains("Name=\"runFullTrust\"", StringComparison.Ordinal),
         "パッケージ化されたWPFアプリに必要なrunFullTrustがありません。");
+    Assert(new[] { "ja-jp", "en-us", "es-es", "zh-cn", "zh-tw" }.All(language =>
+            msixManifest.Contains($"Resource Language=\"{language}\"", StringComparison.Ordinal)),
+        "MSIXマニフェストに対応する5言語が登録されていません。");
     Assert(!msixManifest.Contains("unvirtualizedResources", StringComparison.Ordinal) &&
            !msixManifest.Contains("RegistryWriteVirtualization", StringComparison.Ordinal),
         "Storeで承認されていないレジストリ仮想化解除がMSIXマニフェストに残っています。");
 
     var packageScript = await File.ReadAllTextAsync(
         Path.Combine(releaseFiles, "package-release.ps1"));
-    Assert(packageScript.Contains("[string]$Version = \"1.1.4\"", StringComparison.Ordinal),
-        "配布スクリプトの既定バージョンが1.1.4ではありません。");
+    Assert(packageScript.Contains("[string]$Version = \"1.1.5\"", StringComparison.Ordinal),
+        "配布スクリプトの既定バージョンが1.1.5ではありません。");
     Assert(packageScript.Contains("SigningCertificateThumbprint", StringComparison.Ordinal) &&
            packageScript.Contains("AllowUnsigned", StringComparison.Ordinal) &&
            packageScript.Contains("A trusted code-signing certificate is required",
                StringComparison.Ordinal),
         "正式な配布物でコード署名を必須にする処理がありません。");
-    Assert(typeof(WinBridge.App).Assembly.GetName().Version == new Version(1, 1, 4, 0),
-        "アプリ本体のアセンブリバージョンが1.1.4.0ではありません。");
+    Assert(typeof(WinBridge.App).Assembly.GetName().Version == new Version(1, 1, 5, 0),
+        "アプリ本体のアセンブリバージョンが1.1.5.0ではありません。");
 }
 
 static async Task TestSingleInstanceAsync()

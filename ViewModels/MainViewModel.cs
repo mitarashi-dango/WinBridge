@@ -163,16 +163,17 @@ public sealed class MainViewModel : ObservableObject
 
     private void Report(OperationResult result)
     {
-        StatusMessage = result.UserMessage;
+        var userMessage = L.T(result.UserMessage);
+        StatusMessage = userMessage;
         if (result.IsSuccess)
         {
             ClearError();
-            StatusMessage = result.UserMessage;
+            StatusMessage = userMessage;
             return;
         }
         HasError = true;
         IsErrorDetailsVisible = false;
-        ErrorMessage = result.UserMessage;
+        ErrorMessage = userMessage;
         ErrorTechnicalDetails = SanitizeTechnicalDetails(result.TechnicalDetails);
         ErrorOccurredAt = L.F("発生日時: {0:yyyy-MM-dd HH:mm:ss zzz}", DateTimeOffset.Now);
     }

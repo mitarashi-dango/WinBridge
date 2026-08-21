@@ -10,7 +10,7 @@
       <Border Style="{StaticResource CardStyle}">
         <StackPanel>
           <TextBlock Text="{loc:Loc '表示言語'}" FontSize="20" FontWeight="SemiBold"/>
-          <TextBlock Text="{loc:Loc '「Windowsの表示言語に合わせる」では、日本語環境だけ日本語を表示し、それ以外の環境では英語を表示します。'}"
+          <TextBlock Text="{loc:Loc '「Windowsの表示言語に合わせる」では、対応している言語を自動的に選び、それ以外の環境では英語を表示します。'}"
                      Foreground="{StaticResource MutedBrush}" Margin="0,6,0,12"/>
           <ComboBox ItemsSource="{Binding Languages}" DisplayMemberPath="DisplayName"
                     SelectedItem="{Binding SelectedLanguage}" Width="330"

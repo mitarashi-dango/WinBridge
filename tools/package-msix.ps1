@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$Version = "1.1.4.0",
+    [string]$Version = "1.1.5.0",
 
     [Parameter(Mandatory)]
     [ValidateNotNullOrEmpty()]
@@ -25,7 +25,7 @@ function ConvertTo-MsixVersion {
 
     $parsed = $null
     if (-not [Version]::TryParse($Value, [ref]$parsed)) {
-        throw "MSIX version must contain numeric components, for example 1.1.4.0: $Value"
+        throw "MSIX version must contain numeric components, for example 1.1.5.0: $Value"
     }
 
     $components = @($parsed.Major, $parsed.Minor, [Math]::Max(0, $parsed.Build), [Math]::Max(0, $parsed.Revision))

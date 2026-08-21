@@ -28,7 +28,7 @@ public sealed class SearchViewModel : ObservableObject
         var result = await _statusService.GetStatusAsync();
         ServiceStatus = result.IsSuccess && result.Value is not null
             ? result.Value
-            : result.UserMessage;
+            : L.T(result.UserMessage);
         if (!result.IsSuccess)
             _report(OperationResult.Failure(result.UserMessage, result.TechnicalDetails));
     }

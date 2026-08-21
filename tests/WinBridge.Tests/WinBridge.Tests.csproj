@@ -18,6 +18,15 @@
     <None Include="..\..\Resources\Strings.en-US.json"
           Link="Resources\Strings.en-US.json"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Resources\Strings.es-ES.json"
+          Link="Resources\Strings.es-ES.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Resources\Strings.zh-CN.json"
+          Link="Resources\Strings.zh-CN.json"
+          CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Resources\Strings.zh-TW.json"
+          Link="Resources\Strings.zh-TW.json"
+          CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\Views\*.xaml"
           Link="Views\%(Filename)%(Extension)"
           CopyToOutputDirectory="PreserveNewest" />

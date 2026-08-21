@@ -1,5 +1,5 @@
 #ifndef AppVersion
-#define AppVersion "1.1.4"
+#define AppVersion "1.1.5"
 #endif
 
 #ifndef SourceDir
@@ -51,16 +51,31 @@ VersionInfoProductVersion={#AppVersion}
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "japanese"; MessagesFile: "compiler:Languages\Japanese.isl"
+Name: "spanish"; MessagesFile: "compiler:Languages\Spanish.isl"
+Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+Name: "chinesetraditional"; MessagesFile: "compiler:Languages\ChineseTraditional.isl"
 
 [CustomMessages]
 english.DesktopIcon=Create a desktop shortcut
 japanese.DesktopIcon=デスクトップにショートカットを作成する
+spanish.DesktopIcon=Crear un acceso directo en el escritorio
+chinesesimplified.DesktopIcon=创建桌面快捷方式
+chinesetraditional.DesktopIcon=建立桌面捷徑
 english.AdditionalShortcuts=Additional shortcuts:
 japanese.AdditionalShortcuts=追加のショートカット:
+spanish.AdditionalShortcuts=Accesos directos adicionales:
+chinesesimplified.AdditionalShortcuts=其他快捷方式:
+chinesetraditional.AdditionalShortcuts=其他捷徑:
 english.UninstallShortcut=Uninstall %1
 japanese.UninstallShortcut=%1 のアンインストール
+spanish.UninstallShortcut=Desinstalar %1
+chinesesimplified.UninstallShortcut=卸载 %1
+chinesetraditional.UninstallShortcut=解除安裝 %1
 english.LaunchProgram=Launch %1
 japanese.LaunchProgram=%1 を起動する
+spanish.LaunchProgram=Iniciar %1
+chinesesimplified.LaunchProgram=启动 %1
+chinesetraditional.LaunchProgram=啟動 %1
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:DesktopIcon}"; GroupDescription: "{cm:AdditionalShortcuts}"; Flags: unchecked

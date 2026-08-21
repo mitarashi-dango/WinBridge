@@ -5,12 +5,18 @@ namespace WinBridge.Localization;
 
 public static class LocalizationService
 {
-    private static IReadOnlyDictionary<string, string> _english = new Dictionary<string, string>();
+    private static IReadOnlyDictionary<string, string> _translations =
+        new Dictionary<string, string>();
     private static readonly string WindowsLanguage = CultureInfo.CurrentUICulture.Name;
+    private static readonly HashSet<string> SupportedLanguages =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            "ja-JP", "en-US", "zh-CN", "zh-TW", "es-ES"
+        };
 
     public static string CurrentLanguage { get; private set; } = "ja-JP";
     public static string LanguagePreference { get; private set; } = "system";
-    public static bool IsEnglish => CurrentLanguage == "en-US";
+    public static bool UsesTranslationResource => CurrentLanguage != "ja-JP";
 
     public static void Initialize(string? language)
     {
@@ -23,46 +29,59 @@ public static class LocalizationService
         CultureInfo.DefaultThreadCurrentCulture = culture;
         CultureInfo.DefaultThreadCurrentUICulture = culture;
 
-        if (!IsEnglish)
+        if (!UsesTranslationResource)
         {
-            _english = new Dictionary<string, string>();
+            _translations = new Dictionary<string, string>();
             return;
         }
 
         try
         {
-            var path = Path.Combine(AppContext.BaseDirectory, "Resources", "Strings.en-US.json");
+            var path = Path.Combine(
+                AppContext.BaseDirectory, "Resources", $"Strings.{CurrentLanguage}.json");
             var json = File.ReadAllText(path);
-            _english = JsonSerializer.Deserialize<Dictionary<string, string>>(json)
-                       ?? new Dictionary<string, string>();
+            _translations = JsonSerializer.Deserialize<Dictionary<string, string>>(json)
+                            ?? new Dictionary<string, string>();
         }
         catch
         {
-            _english = new Dictionary<string, string>();
+            _translations = new Dictionary<string, string>();
         }
     }
 
     public static string Translate(string? source)
     {
-        if (string.IsNullOrEmpty(source) || !IsEnglish) return source ?? "";
-        return _english.TryGetValue(source, out var translated) ? translated : source;
+        if (string.IsNullOrEmpty(source) || !UsesTranslationResource) return source ?? "";
+        return _translations.TryGetValue(source, out var translated) ? translated : source;
     }
 
     public static string ResolveLanguage(string? preference, string? windowsLanguage)
     {
         var normalized = NormalizePreference(preference);
         if (normalized != "system") return normalized;
-        return windowsLanguage?.StartsWith("ja", StringComparison.OrdinalIgnoreCase) == true
-            ? "ja-JP"
-            : "en-US";
+        if (string.IsNullOrWhiteSpace(windowsLanguage)) return "en-US";
+        if (windowsLanguage.StartsWith("ja", StringComparison.OrdinalIgnoreCase)) return "ja-JP";
+        if (windowsLanguage.StartsWith("es", StringComparison.OrdinalIgnoreCase)) return "es-ES";
+        if (IsTraditionalChinese(windowsLanguage)) return "zh-TW";
+        if (windowsLanguage.StartsWith("zh", StringComparison.OrdinalIgnoreCase)) return "zh-CN";
+        return "en-US";
     }
 
     private static string NormalizePreference(string? language)
     {
-        if (string.Equals(language, "ja-JP", StringComparison.OrdinalIgnoreCase)) return "ja-JP";
-        if (string.Equals(language, "en-US", StringComparison.OrdinalIgnoreCase)) return "en-US";
+        if (SupportedLanguages.Contains(language ?? ""))
+            return SupportedLanguages.First(item =>
+                string.Equals(item, language, StringComparison.OrdinalIgnoreCase));
+        if (string.Equals(language, "zh-Hans", StringComparison.OrdinalIgnoreCase)) return "zh-CN";
+        if (string.Equals(language, "zh-Hant", StringComparison.OrdinalIgnoreCase)) return "zh-TW";
         return "system";
     }
+
+    private static bool IsTraditionalChinese(string language) =>
+        language.StartsWith("zh-Hant", StringComparison.OrdinalIgnoreCase) ||
+        language.StartsWith("zh-TW", StringComparison.OrdinalIgnoreCase) ||
+        language.StartsWith("zh-HK", StringComparison.OrdinalIgnoreCase) ||
+        language.StartsWith("zh-MO", StringComparison.OrdinalIgnoreCase);
 }
 
 public static class L
