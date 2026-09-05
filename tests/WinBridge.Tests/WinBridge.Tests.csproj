@@ -39,6 +39,9 @@
     <None Include="..\..\Services\PowerPresetService.cs"
           Link="SourceFiles\Services\PowerPresetService.cs"
           CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\Services\ExplorerSettingsService.cs"
+          Link="SourceFiles\Services\ExplorerSettingsService.cs"
+          CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\ViewModels\PowerViewModel.cs"
           Link="SourceFiles\ViewModels\PowerViewModel.cs"
           CopyToOutputDirectory="PreserveNewest" />

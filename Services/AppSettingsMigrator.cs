@@ -78,7 +78,7 @@ public static class AppSettingsMigrator
 
         if (settings.Version == 5)
         {
-            settings.Language = NormalizeLanguage(settings.Language);
+            settings.Language = LocalizationService.NormalizePreference(settings.Language);
             settings.Version = 6;
         }
 
@@ -100,12 +100,12 @@ public static class AppSettingsMigrator
         settings.Favorites ??= [];
         settings.CustomPowerPreset ??= new PowerPresetSettings();
         settings.Modules = settings.Modules
-            .Where(m => !string.IsNullOrWhiteSpace(m.Id))
+            .Where(m => m is not null && !string.IsNullOrWhiteSpace(m.Id))
             .GroupBy(m => m.Id, StringComparer.OrdinalIgnoreCase)
             .Select(g => g.First())
             .ToList();
         settings.Settings = settings.Settings
-            .Where(s => !string.IsNullOrWhiteSpace(s.Id))
+            .Where(s => s is not null && !string.IsNullOrWhiteSpace(s.Id))
             .GroupBy(s => s.Id, StringComparer.OrdinalIgnoreCase)
             .Select(g => g.First())
             .ToList();
@@ -117,13 +117,6 @@ public static class AppSettingsMigrator
             .Where(id => !string.IsNullOrWhiteSpace(id))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
-        settings.Language = NormalizeLanguage(settings.Language);
-    }
-
-    private static string NormalizeLanguage(string? language)
-    {
-        if (string.Equals(language, "ja-JP", StringComparison.OrdinalIgnoreCase)) return "ja-JP";
-        if (string.Equals(language, "en-US", StringComparison.OrdinalIgnoreCase)) return "en-US";
-        return "system";
+        settings.Language = LocalizationService.NormalizePreference(settings.Language);
     }
 }

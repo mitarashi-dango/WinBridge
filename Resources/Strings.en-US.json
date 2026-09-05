@@ -1,4 +1,5 @@
 {
+  "ファイル表示設定の変更に失敗し、元の値へ完全には戻せませんでした。フォルダー オプションで確認してください。": "Could not change the file display settings or fully restore the previous values. Check File Explorer Options.",
   "WinBridge の設定": "WinBridge settings",
   "言語設定": "Language settings",
   "アプリ設定": "App settings",

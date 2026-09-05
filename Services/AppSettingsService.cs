@@ -35,7 +35,7 @@ public sealed class AppSettingsService
 
         var primary = await TryLoadFileAsync(_path);
         if (primary is not null)
-            return ApplyMigration(primary);
+            return primary;
 
         _logger.Error("設定ファイルを読み込めませんでした。");
         BackupBrokenSettings();
@@ -44,7 +44,7 @@ public sealed class AppSettingsService
         if (backup is not null)
         {
             _logger.Info("前回の正常な設定バックアップから復旧しました。");
-            return ApplyMigration(backup);
+            return backup;
         }
 
         _logger.Error("利用できる設定バックアップがないため初期設定へ戻しました。");
@@ -123,15 +123,21 @@ public sealed class AppSettingsService
         return migration.Settings;
     }
 
-    private static async Task<AppSettings?> TryLoadFileAsync(string path)
+    private async Task<AppSettings?> TryLoadFileAsync(string path)
     {
         if (!File.Exists(path)) return null;
         try
         {
             await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-            return await JsonSerializer.DeserializeAsync<AppSettings>(stream, JsonOptions);
+            var settings = await JsonSerializer.DeserializeAsync<AppSettings>(stream, JsonOptions);
+            // 移行・検証まで成功した設定だけを採用し、失敗時はバックアップへ進む。
+            return settings is null ? null : ApplyMigration(settings);
         }
-        catch { return null; }
+        catch (Exception ex)
+        {
+            _logger.Error("設定ファイルの読込・移行に失敗しました。", ex);
+            return null;
+        }
     }
 
     private void BackupBrokenSettings()

@@ -67,7 +67,7 @@ public static class LocalizationService
         return "en-US";
     }
 
-    private static string NormalizePreference(string? language)
+    public static string NormalizePreference(string? language)
     {
         if (SupportedLanguages.Contains(language ?? ""))
             return SupportedLanguages.First(item =>
