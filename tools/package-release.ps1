@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$Version = "1.1.5",
+    [string]$Version = "1.1.6",
     [string]$IsccPath,
     [string]$SigningCertificateThumbprint,
     [string]$TimestampServer = "http://timestamp.digicert.com",
