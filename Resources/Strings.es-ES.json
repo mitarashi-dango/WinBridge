@@ -1,4 +1,9 @@
 {
+  "エクスプローラーで探したいフォルダー、または「PC」を開き、検索ボックスにファイル名を入力してください。": "Abra la carpeta que desea buscar, o Este equipo, en el Explorador de archivos e introduzca un nombre de archivo en el cuadro de búsqueda.",
+  "ファイル名から探す場合は、無料の検索ツール「Everything」も利用できます。Windows検索の修復や文書の内容検索とは用途が異なります。": "Para buscar por nombre de archivo, también puede usar la herramienta gratuita Everything. Su finalidad es distinta de reparar Windows Search o buscar en el contenido de documentos.",
+  "Everythingの公式サイトを開く": "Abrir el sitio oficial de Everything",
+  "Everythingの公式サイトを開きました。": "Se abrió el sitio oficial de Everything.",
+  "Everythingの公式サイトを開けませんでした。": "No se pudo abrir el sitio oficial de Everything.",
   "更新はまだ確認していません。": "Aún no se han buscado actualizaciones.",
   "Microsoft Storeで更新を確認します。更新はStoreからインストールできます。": "Busca actualizaciones en Microsoft Store. Puedes instalarlas desde la tienda.",
   "GitHubで正式リリースを確認します。更新は配布ページからダウンロードできます。": "Busca versiones estables en GitHub. Puedes descargarlas desde la página de versiones.",

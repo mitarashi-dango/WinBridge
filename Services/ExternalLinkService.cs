@@ -9,6 +9,22 @@ public sealed class ExternalLinkService
 
     public ExternalLinkService(LoggingService logger) => _logger = logger;
 
+    public OperationResult OpenEverythingPage()
+    {
+        try
+        {
+            using var process = Process.Start(new ProcessStartInfo("https://www.voidtools.com/")
+                { UseShellExecute = true })
+                ?? throw new InvalidOperationException("Could not start browser.");
+            return OperationResult.Success("Everythingの公式サイトを開きました。");
+        }
+        catch (Exception ex)
+        {
+            _logger.Error("Everythingの公式サイトを開けませんでした。", ex);
+            return OperationResult.Failure("Everythingの公式サイトを開けませんでした。", ex.Message);
+        }
+    }
+
     public OperationResult OpenUpdatePage(string target)
     {
         try

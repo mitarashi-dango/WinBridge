@@ -1,4 +1,9 @@
 {
+  "エクスプローラーで探したいフォルダー、または「PC」を開き、検索ボックスにファイル名を入力してください。": "Open the folder you want to search, or This PC, in File Explorer and enter a file name in the search box.",
+  "ファイル名から探す場合は、無料の検索ツール「Everything」も利用できます。Windows検索の修復や文書の内容検索とは用途が異なります。": "For file name searches, you can also use the free search tool Everything. This serves a different purpose from repairing Windows Search or searching document contents.",
+  "Everythingの公式サイトを開く": "Open the Everything website",
+  "Everythingの公式サイトを開きました。": "Opened the Everything website.",
+  "Everythingの公式サイトを開けませんでした。": "Could not open the Everything website.",
   "更新はまだ確認していません。": "Updates have not been checked yet.",
   "Microsoft Storeで更新を確認します。更新はStoreからインストールできます。": "Checks Microsoft Store for updates. Install updates from the Store.",
   "GitHubで正式リリースを確認します。更新は配布ページからダウンロードできます。": "Checks GitHub for stable releases. Download updates from the release page.",

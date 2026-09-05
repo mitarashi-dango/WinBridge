@@ -65,7 +65,7 @@ public sealed class MainViewModel : ObservableObject
         Home = new HomeViewModel(modules.Modules, settingCatalog.SelectedSettings, Navigate, OpenSetting);
         Power = new PowerViewModel(power, powerPreset, Report);
         WindowsUpdate = new WindowsUpdateViewModel(launcher, updateStatus, Report);
-        Search = new SearchViewModel(launcher, searchStatus, Report);
+        Search = new SearchViewModel(launcher, searchStatus, Report, externalLinks);
         Explorer = new ExplorerViewModel(explorer, launcher, Report);
         Devices = new DeviceViewModel(deviceStatus, devicePageSettings, launcher, Report);
         ModuleSettings = new ModuleSettingsViewModel(modules, RefreshNavigation, Report);
