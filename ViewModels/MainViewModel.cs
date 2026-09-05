@@ -43,6 +43,7 @@ public sealed class MainViewModel : ObservableObject
     public ModuleSettingsViewModel ModuleSettings { get; }
     public SettingsCatalogViewModel SettingsCatalog { get; }
     public AppPreferencesViewModel AppPreferences { get; }
+    public AppUpdateViewModel AppUpdates { get; }
 
     internal static string FormatVersion(Version? version) => version is null
         ? ""
@@ -52,7 +53,7 @@ public sealed class MainViewModel : ObservableObject
         DevicePageSettingsService devicePageSettings,
         PowerSettingsService power, PowerPresetService powerPreset, WindowsSettingsLauncher launcher,
         ExplorerSettingsService explorer, WindowsUpdateStatusService updateStatus, SearchStatusService searchStatus,
-        DeviceStatusService deviceStatus, ExternalLinkService externalLinks)
+        DeviceStatusService deviceStatus, ExternalLinkService externalLinks, AppUpdateService appUpdates)
     {
         _modules = modules;
         _settingCatalog = settingCatalog;
@@ -64,12 +65,13 @@ public sealed class MainViewModel : ObservableObject
         Home = new HomeViewModel(modules.Modules, settingCatalog.SelectedSettings, Navigate, OpenSetting);
         Power = new PowerViewModel(power, powerPreset, Report);
         WindowsUpdate = new WindowsUpdateViewModel(launcher, updateStatus, Report);
-        Search = new SearchViewModel(launcher, searchStatus, Report);
+        Search = new SearchViewModel(launcher, searchStatus, Report, externalLinks);
         Explorer = new ExplorerViewModel(explorer, launcher, Report);
         Devices = new DeviceViewModel(deviceStatus, devicePageSettings, launcher, Report);
         ModuleSettings = new ModuleSettingsViewModel(modules, RefreshNavigation, Report);
         SettingsCatalog = new SettingsCatalogViewModel(settingCatalog, RefreshSettings, Report);
-        AppPreferences = new AppPreferencesViewModel(modules, externalLinks, Report);
+        AppUpdates = new AppUpdateViewModel(modules, appUpdates, externalLinks, Report);
+        AppPreferences = new AppPreferencesViewModel(modules, externalLinks, Report, AppUpdates);
         _pages["home"] = Home;
         _pages["power"] = Power;
         _pages["windows-update"] = WindowsUpdate;
@@ -163,16 +165,17 @@ public sealed class MainViewModel : ObservableObject
 
     private void Report(OperationResult result)
     {
-        StatusMessage = result.UserMessage;
+        var userMessage = L.T(result.UserMessage);
+        StatusMessage = userMessage;
         if (result.IsSuccess)
         {
             ClearError();
-            StatusMessage = result.UserMessage;
+            StatusMessage = userMessage;
             return;
         }
         HasError = true;
         IsErrorDetailsVisible = false;
-        ErrorMessage = result.UserMessage;
+        ErrorMessage = userMessage;
         ErrorTechnicalDetails = SanitizeTechnicalDetails(result.TechnicalDetails);
         ErrorOccurredAt = L.F("発生日時: {0:yyyy-MM-dd HH:mm:ss zzz}", DateTimeOffset.Now);
     }

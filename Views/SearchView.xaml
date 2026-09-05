@@ -2,8 +2,8 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:loc="clr-namespace:WinBridge.Localization">
-  <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <StackPanel MaxWidth="820" HorizontalAlignment="Left">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel MaxWidth="820" HorizontalAlignment="Stretch">
       <TextBlock Text="{loc:Loc 'スタートと検索'}" FontSize="30" FontWeight="SemiBold"/>
       <TextBlock Text="{Binding ServiceStatus}" Foreground="{StaticResource MutedBrush}" Margin="0,4,0,20"/>
       <Border Style="{StaticResource CardStyle}">
@@ -26,7 +26,11 @@
       <Border Style="{StaticResource CardStyle}" Margin="0,12,0,14">
         <StackPanel>
           <TextBlock Text="{loc:Loc '確認手順'}" FontSize="19" FontWeight="SemiBold" Margin="0,0,0,8"/>
-          <TextBlock Text="{Binding Guidance}" LineHeight="24"/>
+          <TextBlock Text="{Binding Guidance}" LineHeight="24" TextWrapping="Wrap"/>
+          <StackPanel Margin="0,16,0,0" Visibility="{Binding ShowEverything, Converter={StaticResource BoolToVisibility}}">
+            <TextBlock Text="{loc:Loc 'ファイル名から探す場合は、無料の検索ツール「Everything」も利用できます。Windows検索の修復や文書の内容検索とは用途が異なります。'}" TextWrapping="Wrap" LineHeight="24"/>
+            <Button Content="{loc:Loc 'Everythingの公式サイトを開く'}" Command="{Binding OpenEverythingCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"/>
+          </StackPanel>
         </StackPanel>
       </Border>
       <TextBlock Text="{loc:Loc 'WinBridgeはインデックスの再構築、サービス停止、レジストリやグループポリシーの変更を自動実行しません。'}"

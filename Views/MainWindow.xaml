@@ -92,7 +92,21 @@
       </DockPanel>
     </Border>
 
-    <ContentControl Grid.Column="1" Content="{Binding CurrentViewModel}" Margin="28,24,28,14"/>
+    <DockPanel Grid.Column="1" Margin="28,24,28,14">
+      <Border DockPanel.Dock="Top" Background="#EAF4FF" BorderBrush="#9AC6EF"
+              BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,14"
+              Visibility="{Binding AppUpdates.HasNotification, Converter={StaticResource BoolToVisibility}}">
+        <StackPanel DataContext="{Binding AppUpdates}">
+          <TextBlock Text="{Binding Notification}" FontWeight="SemiBold" TextWrapping="Wrap"
+                     AutomationProperties.LiveSetting="Polite"/>
+          <WrapPanel Margin="0,8,0,0">
+            <Button Content="{loc:Loc '更新ページを開く'}" Command="{Binding OpenUpdateCommand}"/>
+            <Button Content="{loc:Loc '閉じる'}" Command="{Binding DismissCommand}"/>
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+      <ContentControl Content="{Binding CurrentViewModel}"/>
+    </DockPanel>
     <Border Grid.Row="1" Grid.Column="1" Background="White" BorderBrush="#DCE3EC" BorderThickness="0,1,0,0">
       <StackPanel>
         <Grid MinHeight="42">

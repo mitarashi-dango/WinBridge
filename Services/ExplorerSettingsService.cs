@@ -1,6 +1,4 @@
-using Microsoft.Win32;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 using WinBridge.Models;
 
 namespace WinBridge.Services;
@@ -9,15 +7,21 @@ public sealed record ExplorerSettings(bool ShowFileExtensions, bool ShowHiddenFi
 
 public sealed class ExplorerSettingsService
 {
-    private const string AdvancedKey = @"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced";
     private readonly LoggingService _logger;
-    private ExplorerSettings? _undoValue;
+    private readonly IExplorerSettingsAccessor _accessor;
+    private ExplorerSettingsSnapshot? _undoValue;
     public bool CanChangeSettingsDirectly { get; }
 
     public ExplorerSettingsService(LoggingService logger, bool? canChangeSettingsDirectly = null)
+        : this(logger, new ExplorerSettingsAccessor(),
+            canChangeSettingsDirectly ?? !PackageIdentityService.IsPackaged) { }
+
+    internal ExplorerSettingsService(LoggingService logger, IExplorerSettingsAccessor accessor,
+        bool canChangeSettingsDirectly = true)
     {
         _logger = logger;
-        CanChangeSettingsDirectly = canChangeSettingsDirectly ?? !PackageIdentityService.IsPackaged;
+        _accessor = accessor;
+        CanChangeSettingsDirectly = canChangeSettingsDirectly;
     }
 
     public OperationResult<ExplorerSettings> Get()
@@ -28,11 +32,9 @@ public sealed class ExplorerSettingsService
 
         try
         {
-            using var key = Registry.CurrentUser.OpenSubKey(AdvancedKey);
-            var hideFileExt = Convert.ToInt32(key?.GetValue("HideFileExt", 1));
-            var hidden = Convert.ToInt32(key?.GetValue("Hidden", 2));
+            var settings = _accessor.Read().ToSettings();
             _logger.Info("エクスプローラー表示設定を取得しました。");
-            return OperationResult<ExplorerSettings>.Success(new(hideFileExt == 0, hidden == 1));
+            return OperationResult<ExplorerSettings>.Success(settings);
         }
         catch (Exception ex)
         {
@@ -47,24 +49,7 @@ public sealed class ExplorerSettingsService
         if (!CanChangeSettingsDirectly)
             return StorePackageRestriction();
 
-        try
-        {
-            var before = Get();
-            if (!before.IsSuccess) return OperationResult.Failure(before.UserMessage, before.TechnicalDetails);
-            _undoValue = before.Value;
-            using var key = Registry.CurrentUser.CreateSubKey(AdvancedKey, true);
-            key.SetValue("HideFileExt", showExtensions ? 0 : 1, RegistryValueKind.DWord);
-            key.SetValue("Hidden", showHidden ? 1 : 2, RegistryValueKind.DWord);
-            NotifyShell();
-            _logger.Info("エクスプローラー表示設定を変更しました。");
-            return OperationResult.Success("ファイル表示設定を変更しました。");
-        }
-        catch (Exception ex)
-        {
-            _logger.Error("エクスプローラー表示設定を変更できませんでした。", ex);
-            return OperationResult.Failure("ファイル表示設定を変更できませんでした。",
-                $"{ex.GetType().Name}: {ex.Message}");
-        }
+        return Change(ExplorerSettingsSnapshot.FromSettings(showExtensions, showHidden), isUndo: false);
     }
 
     public OperationResult Undo()
@@ -74,26 +59,75 @@ public sealed class ExplorerSettingsService
 
         return _undoValue is null
             ? OperationResult.Failure("元に戻せる変更がありません。")
-            : ApplyWithoutUndo(_undoValue);
+            : Change(_undoValue, isUndo: true);
     }
 
-    private OperationResult ApplyWithoutUndo(ExplorerSettings value)
+    private OperationResult Change(ExplorerSettingsSnapshot value, bool isUndo)
     {
+        ExplorerSettingsSnapshot before;
         try
         {
-            using var key = Registry.CurrentUser.CreateSubKey(AdvancedKey, true);
-            key.SetValue("HideFileExt", value.ShowFileExtensions ? 0 : 1, RegistryValueKind.DWord);
-            key.SetValue("Hidden", value.ShowHiddenFiles ? 1 : 2, RegistryValueKind.DWord);
-            NotifyShell();
-            _undoValue = null;
-            _logger.Info("エクスプローラー表示設定を元に戻しました。");
-            return OperationResult.Success("直前のファイル表示設定に戻しました。");
+            before = _accessor.Read();
+            _ = before.ToSettings();
         }
         catch (Exception ex)
         {
-            return OperationResult.Failure("元の表示設定に戻せませんでした。",
+            _logger.Error("エクスプローラー表示設定を取得できませんでした。", ex);
+            return OperationResult.Failure("ファイル表示設定を取得できませんでした。",
                 $"{ex.GetType().Name}: {ex.Message}");
         }
+
+        try
+        {
+            _accessor.WriteValue(ExplorerValue.HideFileExt, value.HideFileExt);
+            _accessor.WriteValue(ExplorerValue.Hidden, value.Hidden);
+            _accessor.NotifyShell();
+            Verify(value);
+            // 成功した変更だけを「元に戻す」の対象にする。
+            _undoValue = isUndo ? null : before;
+            var message = isUndo ? "直前のファイル表示設定に戻しました。" : "ファイル表示設定を変更しました。";
+            _logger.Info(message);
+            return OperationResult.Success(message);
+        }
+        catch (Exception ex)
+        {
+            var message = isUndo ? "元の表示設定に戻せませんでした。" : "ファイル表示設定を変更できませんでした。";
+            _logger.Error(message, ex);
+            var rollbackErrors = Restore(before);
+            var details = $"{ex.GetType().Name}: {ex.Message}";
+            if (rollbackErrors.Count == 0)
+                return OperationResult.Failure($"{L.T(message)} {L.T("変更前の値へ戻しました。")}", details);
+
+            // 復元が不完全だった場合、適用直前の値への復元を再試行できるよう保持する。
+            if (!isUndo) _undoValue = before;
+            _logger.Error("ファイル表示設定を完全には元へ戻せませんでした。");
+            return OperationResult.Failure(
+                "ファイル表示設定の変更に失敗し、元の値へ完全には戻せませんでした。フォルダー オプションで確認してください。",
+                $"{details}; Rollback: {string.Join("; ", rollbackErrors)}");
+        }
+    }
+
+    private List<string> Restore(ExplorerSettingsSnapshot original)
+    {
+        var errors = new List<string>();
+        // 一方の復元に失敗しても、もう一方の復元と確認を試みる。
+        Attempt(() => _accessor.WriteValue(ExplorerValue.HideFileExt, original.HideFileExt));
+        Attempt(() => _accessor.WriteValue(ExplorerValue.Hidden, original.Hidden));
+        Attempt(_accessor.NotifyShell);
+        Attempt(() => Verify(original));
+        return errors;
+
+        void Attempt(Action action)
+        {
+            try { action(); }
+            catch (Exception ex) { errors.Add($"{ex.GetType().Name}: {ex.Message}"); }
+        }
+    }
+
+    private void Verify(ExplorerSettingsSnapshot expected)
+    {
+        if (_accessor.Read() != expected)
+            throw new InvalidOperationException("File display settings verification failed.");
     }
 
     public async Task<OperationResult> RestartExplorerAsync()
@@ -117,13 +151,8 @@ public sealed class ExplorerSettingsService
         }
     }
 
-    private static void NotifyShell() =>
-        SHChangeNotify(0x08000000, 0x0000, IntPtr.Zero, IntPtr.Zero);
-
     private static OperationResult StorePackageRestriction() =>
         OperationResult.Failure(
             "Microsoft Store版では、ファイル表示設定をフォルダー オプションから変更してください。");
 
-    [DllImport("shell32.dll")]
-    private static extern void SHChangeNotify(uint eventId, uint flags, IntPtr item1, IntPtr item2);
 }

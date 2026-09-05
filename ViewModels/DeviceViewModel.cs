@@ -52,7 +52,7 @@ public sealed class DeviceViewModel : ObservableObject
         var result = _deviceStatus.GetStatus();
         if (!result.IsSuccess || result.Value is null)
         {
-            Summary = result.UserMessage;
+            Summary = L.T(result.UserMessage);
             _report(OperationResult.Failure(result.UserMessage, result.TechnicalDetails));
             return Task.CompletedTask;
         }

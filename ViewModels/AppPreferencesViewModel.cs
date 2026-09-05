@@ -15,7 +15,10 @@ public sealed class AppPreferencesViewModel : ObservableObject
     [
         new("system", L.T("Windowsの表示言語に合わせる")),
         new("ja-JP", "日本語"),
-        new("en-US", "English")
+        new("en-US", "English"),
+        new("zh-TW", "中文（繁體）"),
+        new("zh-CN", "中文（简体）"),
+        new("es-ES", "Español")
     ];
 
     public LanguageOption? SelectedLanguage
@@ -26,13 +29,15 @@ public sealed class AppPreferencesViewModel : ObservableObject
 
     public AsyncRelayCommand SaveCommand { get; }
     public RelayCommand OpenSupportPageCommand { get; }
+    public AppUpdateViewModel Updates { get; }
 
     public AppPreferencesViewModel(ModuleService modules, ExternalLinkService externalLinks,
-        Action<OperationResult> report)
+        Action<OperationResult> report, AppUpdateViewModel updates)
     {
         _modules = modules;
         _externalLinks = externalLinks;
         _report = report;
+        Updates = updates;
         SelectedLanguage = Languages.FirstOrDefault(option =>
                                string.Equals(option.Value, modules.Settings.Language,
                                    StringComparison.OrdinalIgnoreCase))

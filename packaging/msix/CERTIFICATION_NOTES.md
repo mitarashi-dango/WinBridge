@@ -1,6 +1,6 @@
 # Microsoft Store certification notes
 
-## Version 1.1.4.0 submission note
+## Version 1.1.5.0 submission note
 
 Use the following text in the certification notes for the new submission:
 
@@ -10,7 +10,7 @@ Use the following text in the certification notes for the new submission:
 
 ## Partner Center checklist
 
-- Upload `WinBridge-v1.1.4.0-x64.msix` from the newly generated `WinBridge-msix-v1.1.4.0` directory.
+- Upload `WinBridge-v1.1.5.0-x64.msix` from the newly generated `WinBridge-msix-v1.1.5.0` directory.
 - Under **Properties > Support info > Use different details for this app**, add a monitored support email address and/or a public developer website.
 - The repository URL `https://github.com/mitarashi-dango/WinBridge` can be used as the developer website only while it is publicly accessible and contains current support information.
 - Confirm that the restricted-capability justification no longer requests `unvirtualizedResources`.

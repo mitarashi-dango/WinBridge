@@ -1,15 +1,35 @@
 # WinBridge
 
-WinBridgeは、Windows 11の分散した設定を、分かりやすい日本語で1か所から扱うための中継アプリです。安全に変更できる設定だけをアプリ内で変更し、それ以外はWindowsの正規設定画面へ案内します。
+WinBridgeは、Windows 11の分散した設定を1か所から扱うための中継アプリです。安全に変更できる設定だけをアプリ内で変更し、それ以外はWindowsの正規設定画面へ案内します。
+
+表示言語は日本語、英語、スペイン語、簡体字中国語、繁体字中国語に対応しています。「アプリ設定」の「表示言語」から固定するか、Windowsの表示言語に合わせて自動選択できます。未対応のWindows表示言語では英語を使用します。
 
 すべての機能を無料で利用できます。開発支援は任意で、アプリの「アプリ設定」から
 [Ko-fi](https://ko-fi.com/nioudachi)を開けます。支援の有無による機能差や特典はありません。
 
+## WinBridgeの更新通知
+
+起動時にバックグラウンドで新しいバージョンを確認し、更新がある場合はアプリ内の通知欄に表示します。
+「アプリ設定」→「WinBridgeの更新」から手動確認と起動時の自動確認の切り替えができます。
+自動確認は初期状態で有効です。通知を閉じても、アプリ設定から更新ページを開けます。
+アプリを終了している間の通知や、自動ダウンロード・自動インストールは行いません。
+
+- 通常版：このリポジトリの[最新の正式リリース](https://github.com/mitarashi-dango/WinBridge/releases/latest)をGitHub APIで確認します。
+  `v1.2.0` / `1.2.0`（4桁の数値バージョンも可）のタグを持つ正式リリースを公開し、Latestに設定してください。
+  現在より大きいバージョンだけが通知対象です。ドラフトとプレリリースは対象外です。
+- Store版：Microsoft Storeの更新APIで確認し、更新ページのボタンからStoreのダウンロードと更新画面を開きます。
+  GitHub版への切り替えは案内しません。実際の確認にはStoreに関連付けた配布パッケージが必要です。
+- 通信には15秒のタイムアウトがあります。通信失敗で操作を止めず、設定画面から再試行できます。
+  自動確認が無効なときは、更新確認のための起動時通信は行いません。
+
+実装仕様：[GitHub Releases API](https://docs.github.com/en/rest/releases/releases#get-the-latest-release)、
+[Microsoft Store更新API](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/package-updates-from-store)。
+
 ## 対応環境
 
 - Windows 11 x64
-- .NET 8 Desktop Runtime
-- ビルドには .NET 8 SDK（または .NET 8をターゲットにできる新しいSDK）
+- .NET 10 Desktop Runtime（通常ビルドの実行時に必要。配布用EXE・ZIP・MSIXには同梱）
+- ビルドには .NET 10 SDK（または .NET 10をターゲットにできる新しいSDK）
 - 管理者権限は通常不要
 
 ## プロジェクト構成
@@ -30,7 +50,7 @@ UIからWindowsコマンドやレジストリを直接操作せず、すべてSe
 
 ## ビルドと起動
 
-1. [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) をインストールします。
+1. [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) をインストールします。
 2. ターミナルでこのフォルダーを開きます。
 3. 次を実行します。
 
@@ -40,7 +60,7 @@ dotnet build -c Release
 dotnet run -c Release
 ```
 
-ビルド済みアプリは通常 `bin\Release\net8.0-windows10.0.22621.0\win-x64\WinBridge.exe` から起動できます。
+ビルド済みアプリは通常 `bin\Release\net10.0-windows10.0.22621.0\win-x64\WinBridge.exe` から起動できます。
 
 ## 配布パッケージ
 
@@ -51,13 +71,13 @@ Microsoft Storeへ提出するMSIXは、Partner Centerの「製品 ID の管理�
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\package-msix.ps1 `
-  -Version 1.1.4.0 `
+  -Version 1.1.7.0 `
   -PackageIdentityName '<Partner CenterのPackage/Identity/Name>' `
   -Publisher '<Partner CenterのPackage/Identity/Publisher>' `
   -PublisherDisplayName '<Partner Centerの発行元表示名>'
 ```
 
-成果物は `WinBridge-msix-v1.1.4.0\WinBridge-v1.1.4.0-x64.msix` に作成されます。
+成果物は `WinBridge-msix-v1.1.7.0\WinBridge-v1.1.7.0-x64.msix` に作成されます。
 提出用MSIXは署名せずに生成し、Microsoft Storeが提出後に署名します。
 
 Microsoft Store版はパッケージ実行を自動判定し、エクスプローラーのレジストリを直接変更しません。
@@ -73,7 +93,7 @@ Inno Setup 6または7をインストールしたWindows環境では、次のコ
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\package-release.ps1 `
-  -Version 1.1.4 `
+  -Version 1.1.7 `
   -AllowUnsigned
 ```
 
@@ -81,11 +101,11 @@ powershell -ExecutionPolicy Bypass -File .\tools\package-release.ps1 `
 `-SigningCertificateThumbprint <証明書の拇印>` を指定できます。署名を省略する場合でも、
 成果物のファイル名は変わりません。
 
-成果物はプロジェクト直下の `WinBridge-release-v1.1.4` に作成されます。
+成果物はプロジェクト直下の `WinBridge-release-v1.1.7` に作成されます。
 
 ```text
-WinBridge-v1.1.4-win-x64-portable.zip
-WinBridge-v1.1.4-win-x64-Setup.exe
+WinBridge-v1.1.7-win-x64-portable.zip
+WinBridge-v1.1.7-win-x64-Setup.exe
 SHA256SUMS.txt
 ```
 
@@ -94,8 +114,8 @@ SHA256SUMS.txt
 ダウンロード後の整合性は次のように確認できます。
 
 ```powershell
-Get-FileHash .\WinBridge-v1.1.4-win-x64-portable.zip -Algorithm SHA256
-Get-FileHash .\WinBridge-v1.1.4-win-x64-Setup.exe -Algorithm SHA256
+Get-FileHash .\WinBridge-v1.1.7-win-x64-portable.zip -Algorithm SHA256
+Get-FileHash .\WinBridge-v1.1.7-win-x64-Setup.exe -Algorithm SHA256
 ```
 
 表示された値がGitHub Releaseに添付された `SHA256SUMS.txt` と一致することを確認してください。
@@ -109,13 +129,15 @@ Get-FileHash .\WinBridge-v1.1.4-win-x64-Setup.exe -Algorithm SHA256
 dotnet run --project tests\WinBridge.Tests\WinBridge.Tests.csproj -c Release
 ```
 
-設定Version移行、デバイスページ項目の追加・解除、全解除状態の維持、未来Versionの上書き防止、同時保存、バックアップ復旧、設定カタログURI、端末能力判定、機器依存設定の保存維持、コマンドタイムアウト、単一起動通知を検証します。Windowsの実設定は変更しません。
+設定Version移行、全対応言語の保存・再読込、不正な設定配列の修復、デバイスページ項目の追加・解除、全解除状態の維持、未来Versionの上書き防止、同時保存、バックアップ復旧、設定カタログURI、端末能力判定、機器依存設定の保存維持、電源・エクスプローラー設定の途中失敗と復元、コマンドタイムアウト、単一起動通知を検証します。Windowsの実設定は変更しません。
 
 ## 各モジュール
 
 ### 画面とスリープ
 
 有効な電源プランの画面OFF・スリープ時間を読み込み、電源接続時とバッテリー使用時を変更します。集中作業、普段使い、省電力のプリセットがあります。プリセットを選ぶだけでは反映されず、「設定を適用」で初めて変更されます。
+
+電源接続時とバッテリー使用時の入力欄は、ウィンドウが広い場合は横に、狭い場合は縦に並びます。バッテリーのないPCでは電源接続時の入力欄だけを表示します。
 
 ### Windows Update
 
@@ -125,9 +147,13 @@ dotnet run --project tests\WinBridge.Tests\WinBridge.Tests.csproj -c Release
 
 Windows検索、検索のアクセス許可、インデックス、スタート、既定のアプリ設定を開きます。Windows Searchサービスの状態を読み取り、よくある問題の安全な確認手順を表示します。自動再構築やサービス停止は行いません。
 
+「PC内を探したい」では、エクスプローラーの検索手順と、ファイル名で探すための無料ツール[Everything（voidtools）](https://www.voidtools.com/)を紹介します。ボタンは公式サイトをブラウザーで開くだけで、ソフトの同梱・自動インストールは行いません。他の検索トラブルとスタートの表示変更にはWindows標準の確認手順を案内します。
+
 ### エクスプローラー
 
 EXEインストーラー版とポータブルZIP版では、ファイル名拡張子と隠しファイルの現在値を読み込み、変更します。直前のアプリ内変更は「元に戻す」が使えます（アプリ終了まで）。Microsoft Store版ではレジストリを直接変更せず、Windows標準の「フォルダー オプション」へ案内します。エクスプローラー再起動は確認後に実行し、終了処理に失敗しても再起動を試みます。
+
+ファイル表示設定は変更後に再読み込みして反映を確認します。途中で失敗した場合は変更前の値へ自動復元を試み、復元結果も確認します。完全に復元できなかった場合はエラー詳細を表示し、「元に戻す」で再試行できます。
 
 ### デバイスと接続
 
@@ -135,9 +161,11 @@ EXEインストーラー版とポータブルZIP版では、ファイル名拡�
 
 ## 表示する機能と自分用
 
-左下の「表示する機能」を開き、チェックを外すとホームとナビゲーションから隠せます。カードのドラッグ、または上下ボタンで並べ替えられます。「★ 自分用」を選ぶとホーム上部にもショートカットが表示されます。すべてを非表示にしても管理画面は残ります。
+初回起動では5種類すべての機能を表示します。既存の表示設定は引き継がれます。左下の「表示する機能」を開き、チェックを外すとホームとナビゲーションから隠せます。カードのドラッグ、または上下ボタンで並べ替えられます。「★ 自分用」を選ぶとホーム上部にもショートカットが表示されます。すべてを非表示にしても管理画面は残ります。
 
 設定は `%LOCALAPPDATA%\WinBridge\settings.json` に保存されます。JSONが壊れている場合は、同じフォルダーへ日時付きの `settings.broken-*.json` として退避し、前回バックアップから復旧します。利用できるバックアップがない場合だけ初期設定へ戻します。
+
+設定配列に `null` や空のIDが混ざっている場合は、不正な要素だけを除いて正常な設定を維持します。読み込みや設定Version移行を完了できない場合もバックアップからの復旧を試みます。
 
 設定保存はアプリ内で1件ずつ順番に処理し、一意な一時ファイルへ完全に書き込んだ後で本体と入れ替えます。直前の正常な設定は `settings.backup.json` に保持され、メイン設定が破損した場合はバックアップから復旧します。新しいWinBridgeで作られた未知の設定Versionは、古いアプリから上書きしません。
 
@@ -195,7 +223,7 @@ WinBridgeはユーザーセッションごとに1つだけ起動します。2回
 
 ## 動作確認
 
-1. 起動し、5枚の機能モジュールカードが表示されることを確認します。
+1. 設定を保存していない状態で起動し、5種類すべての機能がホームとナビゲーションに表示されることを確認します。
 2. 「表示する機能」で非表示、再表示、並べ替えを行い、再起動後も保持されることを確認します。
 3. 電源設定の現在値を読み込み、変更前の値を控えてから1項目ずつ適用・再取得します。
 4. 各Windows設定ボタンが該当画面を開くことを確認します。

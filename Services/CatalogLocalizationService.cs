@@ -130,19 +130,44 @@ public static class CatalogLocalizationService
 
     public static void Localize(ModuleDefinition definition)
     {
-        if (!LocalizationService.IsEnglish) return;
-        if (ModuleNames.TryGetValue(definition.Id, out var name)) definition.DisplayName = name;
-        if (ModuleDescriptions.TryGetValue(definition.Id, out var description))
-            definition.Description = description;
+        var language = LocalizationService.CurrentLanguage;
+        if (language == "ja-JP") return;
+        if (language == "en-US")
+        {
+            if (ModuleNames.TryGetValue(definition.Id, out var name)) definition.DisplayName = name;
+            if (ModuleDescriptions.TryGetValue(definition.Id, out var description))
+                definition.Description = description;
+            return;
+        }
+
+        definition.DisplayName = L.T(definition.DisplayName);
+        var localizedDescription =
+            CatalogTranslationService.GetModuleDescription(definition.Id, language);
+        if (!string.IsNullOrEmpty(localizedDescription))
+            definition.Description = localizedDescription;
     }
 
     public static void Localize(SettingDefinition definition)
     {
-        if (!LocalizationService.IsEnglish) return;
+        var language = LocalizationService.CurrentLanguage;
+        if (language == "ja-JP") return;
+
         var originalKeywords = definition.Keywords;
-        definition.DisplayName = GetSettingName(definition.Id);
-        definition.Category = GetCategory(definition.Id);
-        definition.Description = $"Open the Windows settings page for {definition.DisplayName}.";
+        if (language == "en-US")
+        {
+            definition.DisplayName = GetSettingName(definition.Id);
+            definition.Category = GetCategory(definition.Id);
+            definition.Description = $"Open the Windows settings page for {definition.DisplayName}.";
+        }
+        else
+        {
+            definition.DisplayName =
+                CatalogTranslationService.GetSettingName(definition.Id, language);
+            definition.Category = CatalogTranslationService.GetCategory(definition.Id, language);
+            definition.Description =
+                CatalogTranslationService.GetDescription(definition.DisplayName, language);
+        }
+
         definition.Keywords = originalKeywords
             .Concat(definition.DisplayName.Split([' ', '&', '-', '/'],
                 StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))

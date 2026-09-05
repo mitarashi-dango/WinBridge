@@ -7,11 +7,19 @@ using WinBridge.Localization;
 
 var tests = new (string Name, Func<Task> Run)[]
 {
+    ("更新のバージョン比較と公開先を検証する", AppUpdateTests.VersionsAsync),
+    ("更新APIの通信失敗・タイムアウト・再試行を扱う", AppUpdateTests.NetworkAsync),
+    ("Store版の更新確認をStoreだけに限定する", AppUpdateTests.StoreAsync),
+    ("自動確認の保存と更新通知の表示・解除を行う", AppUpdateTests.PreferencesAndNotificationsAsync),
+    ("更新確認の重複実行と終了時の通知を防ぐ", AppUpdateTests.ConcurrentAndCanceledAsync),
     ("設定Versionを段階的に移行できる", TestMigrationAsync),
     ("デバイスページを空にした設定を維持する", TestEmptyDevicePageMigrationAsync),
     ("新しいVersionを誤って上書きしない", TestFutureVersionAsync),
     ("同時保存でも有効なJSONを維持する", TestConcurrentSaveAsync),
     ("破損時に前回バックアップから復旧する", TestBackupRecoveryAsync),
+    ("全対応言語と別名を保存・再読込できる", TestLanguagePersistenceAsync),
+    ("設定配列の不正要素を除いて正常な設定を維持する", TestInvalidSettingEntriesAsync),
+    ("不正な設定構造から復旧し未来Versionを保護する", TestInvalidSettingsRecoveryAsync),
     ("設定カタログが安全なURIだけを持つ", TestCatalogSafetyAsync),
     ("端末能力の実判定が例外なく完了する", TestRuntimeAvailabilityProbeAsync),
     ("利用できない機器依存設定を隠して保存を維持する", TestConditionalSettingAvailabilityAsync),
@@ -30,6 +38,11 @@ var tests = new (string Name, Func<Task> Run)[]
     ("MSIX実行判定の戻り値を安全に分類できる", TestPackageIdentityClassificationAsync),
     ("GitHub配布版ではExplorer表示設定を維持する", TestGitHubExplorerControlsAsync),
     ("Store版ではExplorer設定の直接変更を拒否する", TestStoreExplorerRestrictionAsync),
+    ("Explorer設定の途中失敗で欠落値も含めて復元する", TestExplorerRollbackAsync),
+    ("Explorer設定の反映不一致と読込失敗を検出する", TestExplorerVerificationAsync),
+    ("Explorer設定の復元失敗を通知し再試行できる", TestExplorerRollbackFailureAsync),
+    ("Explorerの元に戻す操作の失敗後も再試行できる", TestExplorerUndoRetryAsync),
+    ("Explorerの変更失敗後も前回の元に戻す操作を維持する", TestExplorerPreviousUndoAsync),
     ("開発支援リンクを公式Ko-fiページだけに制限する", TestSupportLinkValidationAsync),
     ("Windows標準コマンドをSystem32から起動する", TestSystemExecutableResolutionAsync),
     ("Windowsコマンドをタイムアウトできる", TestCommandTimeoutAsync),
@@ -37,7 +50,7 @@ var tests = new (string Name, Func<Task> Run)[]
     ("アプリのバージョンを画面用に整形できる", TestVersionDisplayAsync),
     ("配布設定がWindows 11・多言語・署名必須になっている", TestReleaseHardeningAsync),
     ("入れ子リストのマウスホイールをページへ転送する", TestNestedScrollRoutingAsync),
-    ("画面文言に英語リソースの漏れがない", TestXamlTranslationsAsync),
+    ("画面文言の4翻訳リソースが揃っている", TestXamlTranslationsAsync),
     ("2個目の起動から既存起動へ通知できる", TestSingleInstanceAsync),
     ("表示言語をWindows言語から判定できる", TestLanguageSelectionAsync)
 };
@@ -125,27 +138,48 @@ static Task TestLanguageSelectionAsync()
     Assert(LocalizationService.ResolveLanguage("system", "ja-JP") == "ja-JP",
         "日本語のWindowsで日本語が選ばれません。");
     Assert(LocalizationService.ResolveLanguage("system", "fr-FR") == "en-US",
-        "日本語以外のWindowsで英語が選ばれません。");
+        "未対応言語のWindowsで英語へフォールバックしません。");
+    Assert(LocalizationService.ResolveLanguage("system", "es-MX") == "es-ES",
+        "スペイン語のWindowsでスペイン語が選ばれません。");
+    Assert(LocalizationService.ResolveLanguage("system", "zh-CN") == "zh-CN" &&
+           LocalizationService.ResolveLanguage("system", "zh-Hans") == "zh-CN",
+        "簡体字中国語のWindowsで簡体字が選ばれません。");
+    Assert(LocalizationService.ResolveLanguage("system", "zh-TW") == "zh-TW" &&
+           LocalizationService.ResolveLanguage("system", "zh-HK") == "zh-TW" &&
+           LocalizationService.ResolveLanguage("system", "zh-Hant") == "zh-TW",
+        "繁体字中国語のWindowsで繁体字が選ばれません。");
     Assert(LocalizationService.ResolveLanguage("ja-JP", "en-US") == "ja-JP",
         "日本語固定の設定が優先されません。");
-    Assert(LocalizationService.ResolveLanguage("en-US", "ja-JP") == "en-US",
-        "英語固定の設定が優先されません。");
+    Assert(LocalizationService.ResolveLanguage("zh-Hans", "ja-JP") == "zh-CN" &&
+           LocalizationService.ResolveLanguage("zh-Hant", "ja-JP") == "zh-TW",
+        "中国語の言語コード別名を正規化できません。");
 
     var automatic = AppSettingsMigrator.Migrate(new AppSettings { Version = 5 }).Settings;
     Assert(automatic.Language == "system", "旧設定の言語がWindows自動判定になりません。");
-    LocalizationService.Initialize("en-US");
-    Assert(L.T("ホーム") == "Home", "英語リソースを読み込めません。");
-    var definition = new SettingDefinition
+
+    foreach (var (language, home, settingName, category) in new[]
+             {
+                 ("en-US", "Home", "Mouse", "Devices"),
+                 ("es-ES", "Inicio", "Ratón", "Dispositivos"),
+                 ("zh-CN", "主页", "鼠标", "设备"),
+                 ("zh-TW", "首頁", "滑鼠", "裝置")
+             })
     {
-        Id = "devices.mouse",
-        DisplayName = "マウス",
-        Description = "マウスを設定します",
-        Category = "デバイス",
-        Target = "ms-settings:mouse"
-    };
-    CatalogLocalizationService.Localize(definition);
-    Assert(definition.DisplayName == "Mouse" && definition.Category == "Devices",
-        "設定カタログを英語化できません。");
+        LocalizationService.Initialize(language);
+        Assert(L.T("ホーム") == home, $"{language} の翻訳リソースを読み込めません。");
+        var definition = new SettingDefinition
+        {
+            Id = "devices.mouse",
+            DisplayName = "マウス",
+            Description = "マウスを設定します",
+            Category = "デバイス",
+            Target = "ms-settings:mouse"
+        };
+        CatalogLocalizationService.Localize(definition);
+        Assert(definition.DisplayName == settingName && definition.Category == category,
+            $"{language} の設定カタログをローカライズできません。");
+    }
+
     LocalizationService.Initialize("ja-JP");
     Assert(L.T("ホーム") == "ホーム", "日本語へ戻せません。");
     return Task.CompletedTask;
@@ -169,6 +203,28 @@ static async Task TestXamlTranslationsAsync()
     var translations = JsonSerializer.Deserialize<Dictionary<string, string>>(
         await File.ReadAllTextAsync(
             Path.Combine(AppContext.BaseDirectory, "Resources", "Strings.en-US.json"))) ?? [];
+    foreach (var language in new[] { "es-ES", "zh-CN", "zh-TW" })
+    {
+        var localized = JsonSerializer.Deserialize<Dictionary<string, string>>(
+            await File.ReadAllTextAsync(
+                Path.Combine(AppContext.BaseDirectory, "Resources", $"Strings.{language}.json"))) ?? [];
+        var missingKeys = translations.Keys.Except(localized.Keys).ToArray();
+        var extraKeys = localized.Keys.Except(translations.Keys).ToArray();
+        var blankValues = localized.Where(item => string.IsNullOrWhiteSpace(item.Value))
+            .Select(item => item.Key).ToArray();
+        var placeholderMismatches = translations.Keys.Where(key =>
+                Placeholders(key) != Placeholders(localized.GetValueOrDefault(key, "")))
+            .ToArray();
+        Assert(missingKeys.Length == 0,
+            $"{language} に不足する翻訳キーがあります: {string.Join(", ", missingKeys)}");
+        Assert(extraKeys.Length == 0,
+            $"{language} に英語辞書と一致しないキーがあります: {string.Join(", ", extraKeys)}");
+        Assert(blankValues.Length == 0,
+            $"{language} に空の翻訳があります: {string.Join(", ", blankValues)}");
+        Assert(placeholderMismatches.Length == 0,
+            $"{language} の書式プレースホルダーが一致しません: {string.Join(", ", placeholderMismatches)}");
+    }
+
     var missing = new HashSet<string>();
     var unwrapped = new List<string>();
     foreach (var file in Directory.EnumerateFiles(
@@ -192,6 +248,9 @@ static async Task TestXamlTranslationsAsync()
                  "Services/PowerPolicyAccessor.cs",
                  "Services/PowerSettingsService.cs",
                  "Services/PowerPresetService.cs",
+                 "Services/ExplorerSettingsService.cs",
+                 "Services/ExternalLinkService.cs",
+                 "ViewModels/AppUpdateViewModel.cs",
                  "ViewModels/PowerViewModel.cs"
              })
     {
@@ -209,7 +268,12 @@ static async Task TestXamlTranslationsAsync()
         }
     }
     Assert(missing.Count == 0,
-        $"英訳のない電源設定文言があります: {string.Join(", ", missing)}");
+        $"英訳のない設定操作の文言があります: {string.Join(", ", missing)}");
+
+    static string Placeholders(string value) =>
+        string.Join("|", Regex.Matches(value, @"\{[^}]+\}")
+            .Select(match => match.Value)
+            .OrderBy(value => value, StringComparer.Ordinal));
 }
 
 static async Task TestConcurrentSaveAsync()
@@ -264,6 +328,103 @@ static async Task TestBackupRecoveryAsync()
         Assert(restored.LastModuleId == "first", "前回バックアップから復旧できません。");
         Assert(Directory.EnumerateFiles(directory, "settings.broken-*.json").Any(),
             "破損ファイルが退避されていません。");
+    }
+    finally { DeleteTemporaryDirectory(directory); }
+}
+
+static async Task TestLanguagePersistenceAsync()
+{
+    var directory = CreateTemporaryDirectory();
+    try
+    {
+        var logger = new LoggingService(Path.Combine(directory, "logs"));
+        foreach (var version in new[] { 5, AppSettingsMigrator.CurrentVersion })
+        foreach (var (input, expected) in new[]
+                 {
+                     ("ja-JP", "ja-JP"), ("en-US", "en-US"), ("es-ES", "es-ES"),
+                     ("zh-CN", "zh-CN"), ("zh-TW", "zh-TW"), ("ES-es", "es-ES"),
+                     ("zh-Hans", "zh-CN"), ("zh-Hant", "zh-TW"),
+                     ("system", "system"), ("fr-FR", "system")
+                 })
+        {
+            var service = new AppSettingsService(logger, directory);
+            await File.WriteAllTextAsync(Path.Combine(directory, "settings.json"),
+                JsonSerializer.Serialize(new AppSettings { Version = version, Language = input }));
+            var loaded = await service.LoadAsync();
+            Assert(loaded.Language == expected,
+                $"Version {version} の {input} が読込時に {loaded.Language} へ変わりました。");
+            Assert((await service.SaveAsync(loaded)).IsSuccess, "言語設定を保存できません。");
+            var reloaded = await new AppSettingsService(logger, directory).LoadAsync();
+            Assert(reloaded.Language == expected, $"{input} が保存・再読込で失われました。");
+
+            loaded.Language = input;
+            Assert((await service.SaveAsync(loaded)).IsSuccess, "選択した言語を保存できません。");
+            var json = JsonSerializer.Deserialize<AppSettings>(
+                await File.ReadAllTextAsync(Path.Combine(directory, "settings.json")));
+            Assert(json?.Language == expected, $"選択した {input} がファイルへ保存されません。");
+        }
+    }
+    finally { DeleteTemporaryDirectory(directory); }
+}
+
+static async Task TestInvalidSettingEntriesAsync()
+{
+    var directory = CreateTemporaryDirectory();
+    try
+    {
+        var logger = new LoggingService(Path.Combine(directory, "logs"));
+        await File.WriteAllTextAsync(Path.Combine(directory, "settings.json"), """
+            {"Version":7,"Language":"es-ES","Modules":[null,{"Id":null},{"Id":"power","IsVisible":false}],
+             "Settings":[null,{"Id":""},{"Id":"system.display","IsFavorite":true}],
+             "Favorites":[null,"","power"],"DevicePageSettings":[null,"devices.mouse"]}
+            """);
+        var service = new AppSettingsService(logger, directory);
+        var loaded = await service.LoadAsync();
+        Assert(loaded.Modules.Count == 1 && loaded.Modules[0].Id == "power" && !loaded.Modules[0].IsVisible,
+            "不正要素を除いた正常なモジュール設定が維持されません。");
+        Assert(loaded.Settings.Count == 1 && loaded.Settings[0].IsFavorite,
+            "不正要素を除いた正常なショートカットが維持されません。");
+        Assert(loaded.Favorites.SequenceEqual(["power"]) &&
+               loaded.DevicePageSettings.SequenceEqual(["devices.mouse"]),
+            "文字列配列の正常な要素が維持されません。");
+        Assert((await service.SaveAsync(loaded)).IsSuccess, "修復した設定を保存できません。");
+        Assert((await new AppSettingsService(logger, directory).LoadAsync()).Modules.Count == 1,
+            "修復した設定を再読込できません。");
+    }
+    finally { DeleteTemporaryDirectory(directory); }
+}
+
+static async Task TestInvalidSettingsRecoveryAsync()
+{
+    var directory = CreateTemporaryDirectory();
+    try
+    {
+        var logger = new LoggingService(Path.Combine(directory, "logs"));
+        var path = Path.Combine(directory, "settings.json");
+        var backupPath = Path.Combine(directory, "settings.backup.json");
+        await File.WriteAllTextAsync(path, """{"Version":7,"Modules":{}}""");
+        await File.WriteAllTextAsync(backupPath,
+            """{"Version":7,"Language":"zh-TW","LastModuleId":"power"}""");
+        var loaded = await new AppSettingsService(logger, directory).LoadAsync();
+        Assert(loaded.Language == "zh-TW" && loaded.LastModuleId == "power",
+            "不正な設定構造からバックアップへ復旧できません。");
+        Assert(Directory.EnumerateFiles(directory, "settings.broken-*.json").Any(),
+            "不正な設定が退避されません。");
+
+        await File.WriteAllTextAsync(path, """{"Version":7,"Settings":false}""");
+        await File.WriteAllTextAsync(backupPath, "null");
+        loaded = await new AppSettingsService(logger, directory).LoadAsync();
+        Assert(loaded.Version == AppSettingsMigrator.CurrentVersion && loaded.Language == "system",
+            "正常なバックアップがない場合に初期設定へ戻れません。");
+
+        const string futureJson = """{"Version":999,"Language":"es-ES","Modules":[null]}""";
+        await File.WriteAllTextAsync(path, futureJson);
+        var service = new AppSettingsService(logger, directory);
+        loaded = await service.LoadAsync();
+        Assert(loaded.Version == 999 && !(await service.SaveAsync(loaded)).IsSuccess,
+            "未来Versionの設定が上書き可能になっています。");
+        Assert(await File.ReadAllTextAsync(path) == futureJson,
+            "未来Versionのファイル内容が変更されました。");
     }
     finally { DeleteTemporaryDirectory(directory); }
 }
@@ -391,6 +552,21 @@ static async Task TestModuleVisibilityAsync()
         var settings = new AppSettings();
         var modules = new ModuleService(settingsService, settings, logger);
         await modules.LoadDefinitionsAsync();
+
+        Assert(modules.Modules.Where(module => module.IsVisible).Select(module => module.Id)
+            .SequenceEqual(new[] { "power", "windows-update", "search", "explorer", "devices" }),
+            "初期状態で5種類すべての機能が表示されていません。");
+        Assert(settings.Settings.Count == 0,
+            "初期状態でWindows設定が追加されています。");
+
+        foreach (var module in modules.Modules)
+            module.IsVisible = true;
+        Assert((await modules.SaveAsync()).IsSuccess, "全機能の表示設定を保存できません。");
+        var existingSettings = await new AppSettingsService(logger, directory).LoadAsync();
+        var existingModules = new ModuleService(settingsService, existingSettings, logger);
+        await existingModules.LoadDefinitionsAsync();
+        Assert(existingModules.Modules.All(module => module.IsVisible),
+            "既存の表示設定が新しい初期設定で上書きされています。");
 
         foreach (var module in modules.Modules)
             module.IsVisible = false;
@@ -734,7 +910,8 @@ static Task TestStoreExplorerRestrictionAsync()
     var directory = CreateTemporaryDirectory();
     try
     {
-        var service = new ExplorerSettingsService(new LoggingService(directory), false);
+        var accessor = new FakeExplorerSettingsAccessor();
+        var service = new ExplorerSettingsService(new LoggingService(directory), accessor, false);
         Assert(!service.CanChangeSettingsDirectly,
             "Store版でExplorer設定の直接変更が有効です。");
         Assert(!service.Get().IsSuccess,
@@ -743,12 +920,128 @@ static Task TestStoreExplorerRestrictionAsync()
             "Store版でExplorerレジストリの書き込みを実行できます。");
         Assert(!service.Undo().IsSuccess,
             "Store版でExplorerレジストリの復元を実行できます。");
+        Assert(accessor.ReadCount == 0 && accessor.Writes.Count == 0 && accessor.NotificationCount == 0,
+            "Store版でExplorerのレジストリまたはシェルへアクセスしています。");
     }
     finally
     {
         DeleteTemporaryDirectory(directory);
     }
 
+    return Task.CompletedTask;
+}
+
+static Task TestExplorerRollbackAsync()
+{
+    var directory = CreateTemporaryDirectory();
+    try
+    {
+        var original = new ExplorerSettingsSnapshot(null,
+            new ExplorerRegistryValue(0, Microsoft.Win32.RegistryValueKind.DWord));
+        var accessor = new FakeExplorerSettingsAccessor { State = original };
+        accessor.FailOnWriteNumbers.Add(2);
+        var service = new ExplorerSettingsService(new LoggingService(directory), accessor);
+        var result = service.Apply(true, true);
+        Assert(!result.IsSuccess && result.UserMessage.Contains("変更前の値へ戻しました", StringComparison.Ordinal),
+            "Explorer設定の途中失敗と復元結果が通知されません。");
+        Assert(accessor.State == original,
+            "欠落していた値や標準値以外の値が変更前の状態へ戻りません。");
+        Assert(!service.Undo().IsSuccess, "失敗した変更が元に戻す履歴へ記録されています。");
+    }
+    finally { DeleteTemporaryDirectory(directory); }
+    return Task.CompletedTask;
+}
+
+static Task TestExplorerVerificationAsync()
+{
+    var directory = CreateTemporaryDirectory();
+    try
+    {
+        foreach (var failure in new[] { "mismatch", "initial-read", "verification-read", "notification" })
+        {
+            var accessor = new FakeExplorerSettingsAccessor();
+            var original = accessor.State;
+            if (failure == "mismatch") accessor.DropWriteNumber = 2;
+            if (failure == "initial-read") accessor.FailOnReadNumbers.Add(1);
+            if (failure == "verification-read") accessor.FailOnReadNumbers.Add(2);
+            if (failure == "notification") accessor.FailOnNotificationNumber = 1;
+            var service = new ExplorerSettingsService(new LoggingService(directory), accessor);
+            var result = service.Apply(true, true);
+            Assert(!result.IsSuccess, $"{failure} が成功として通知されています。");
+            Assert(accessor.State == original, $"{failure} の後に変更が残っています。");
+            if (failure == "initial-read")
+                Assert(accessor.Writes.Count == 0, "変更前の値を読めない状態で書き込んでいます。");
+            else
+                Assert(result.UserMessage.Contains("変更前の値へ戻しました", StringComparison.Ordinal),
+                    $"{failure} の復元結果が通知されません。");
+        }
+    }
+    finally { DeleteTemporaryDirectory(directory); }
+    return Task.CompletedTask;
+}
+
+static Task TestExplorerRollbackFailureAsync()
+{
+    var directory = CreateTemporaryDirectory();
+    try
+    {
+        var accessor = new FakeExplorerSettingsAccessor();
+        var original = accessor.State;
+        accessor.FailOnWriteNumbers.UnionWith([2, 3]);
+        var service = new ExplorerSettingsService(new LoggingService(directory), accessor);
+        var result = service.Apply(true, true);
+        Assert(!result.IsSuccess && result.UserMessage.Contains("完全には戻せません", StringComparison.Ordinal),
+            "Explorer設定の復元失敗が通知されません。");
+        Assert(accessor.Writes.Count == 4 && accessor.Writes[^1].Name == ExplorerValue.Hidden,
+            "片方の復元失敗後にもう片方の復元を試みていません。");
+        Assert(accessor.State != original && result.TechnicalDetails?.Contains("Rollback:") == true,
+            "復元失敗の詳細が通知されません。");
+        Assert(service.Undo().IsSuccess && accessor.State == original,
+            "復元できなかった変更を元に戻す操作で再試行できません。");
+    }
+    finally { DeleteTemporaryDirectory(directory); }
+    return Task.CompletedTask;
+}
+
+static Task TestExplorerUndoRetryAsync()
+{
+    var directory = CreateTemporaryDirectory();
+    try
+    {
+        var original = new ExplorerSettingsSnapshot(null,
+            new ExplorerRegistryValue("0", Microsoft.Win32.RegistryValueKind.String));
+        var accessor = new FakeExplorerSettingsAccessor { State = original };
+        var service = new ExplorerSettingsService(new LoggingService(directory), accessor);
+        Assert(service.Apply(true, true).IsSuccess, "Explorer設定を変更できません。");
+        var applied = accessor.State;
+        accessor.FailOnWriteNumbers.Add(accessor.Writes.Count + 2);
+        Assert(!service.Undo().IsSuccess && accessor.State == applied,
+            "元に戻す操作の途中失敗後に中途半端な設定が残っています。");
+        Assert(service.Undo().IsSuccess && accessor.State == original,
+            "再試行で元の値・種類・欠落状態を復元できません。");
+        Assert(!service.Undo().IsSuccess, "復元済みの変更が履歴に残っています。");
+    }
+    finally { DeleteTemporaryDirectory(directory); }
+    return Task.CompletedTask;
+}
+
+static Task TestExplorerPreviousUndoAsync()
+{
+    var directory = CreateTemporaryDirectory();
+    try
+    {
+        var accessor = new FakeExplorerSettingsAccessor();
+        var original = accessor.State;
+        var service = new ExplorerSettingsService(new LoggingService(directory), accessor);
+        Assert(service.Apply(true, false).IsSuccess, "最初の変更に失敗しました。");
+        var applied = accessor.State;
+        accessor.FailOnWriteNumbers.Add(accessor.Writes.Count + 2);
+        Assert(!service.Apply(false, true).IsSuccess && accessor.State == applied,
+            "失敗した2回目の変更が復元されません。");
+        Assert(service.Undo().IsSuccess && accessor.State == original,
+            "変更失敗で前回の正常な変更履歴が失われました。");
+    }
+    finally { DeleteTemporaryDirectory(directory); }
     return Task.CompletedTask;
 }
 
@@ -839,34 +1132,40 @@ static async Task TestReleaseHardeningAsync()
     Assert(installer.Contains("MinVersion=10.0.22000", StringComparison.Ordinal),
         "インストーラーの最低OSがWindows 11になっていません。");
     Assert(installer.Contains("Name: \"english\"", StringComparison.Ordinal) &&
-           installer.Contains("Name: \"japanese\"", StringComparison.Ordinal),
-        "インストーラーに英語と日本語が登録されていません。");
-    Assert(installer.Contains("#define AppVersion \"1.1.4\"", StringComparison.Ordinal),
-        "インストーラーの既定バージョンが1.1.4ではありません。");
+           installer.Contains("Name: \"japanese\"", StringComparison.Ordinal) &&
+           installer.Contains("Name: \"spanish\"", StringComparison.Ordinal) &&
+           installer.Contains("Name: \"chinesesimplified\"", StringComparison.Ordinal) &&
+           installer.Contains("Name: \"chinesetraditional\"", StringComparison.Ordinal),
+        "インストーラーに対応する5言語が登録されていません。");
+    Assert(installer.Contains("#define AppVersion \"1.1.7\"", StringComparison.Ordinal),
+        "インストーラーの既定バージョンが1.1.7ではありません。");
 
     var manifest = await File.ReadAllTextAsync(Path.Combine(releaseFiles, "app.manifest"));
-    Assert(manifest.Contains("assemblyIdentity version=\"1.1.4.0\"", StringComparison.Ordinal),
-        "アプリマニフェストのバージョンが1.1.4.0ではありません。");
+    Assert(manifest.Contains("assemblyIdentity version=\"1.1.7.0\"", StringComparison.Ordinal),
+        "アプリマニフェストのバージョンが1.1.7.0ではありません。");
 
     var msixManifest = await File.ReadAllTextAsync(
         Path.Combine(releaseFiles, "AppxManifest.template.xml"));
     Assert(msixManifest.Contains("Name=\"runFullTrust\"", StringComparison.Ordinal),
         "パッケージ化されたWPFアプリに必要なrunFullTrustがありません。");
+    Assert(new[] { "ja-jp", "en-us", "es-es", "zh-cn", "zh-tw" }.All(language =>
+            msixManifest.Contains($"Resource Language=\"{language}\"", StringComparison.Ordinal)),
+        "MSIXマニフェストに対応する5言語が登録されていません。");
     Assert(!msixManifest.Contains("unvirtualizedResources", StringComparison.Ordinal) &&
            !msixManifest.Contains("RegistryWriteVirtualization", StringComparison.Ordinal),
         "Storeで承認されていないレジストリ仮想化解除がMSIXマニフェストに残っています。");
 
     var packageScript = await File.ReadAllTextAsync(
         Path.Combine(releaseFiles, "package-release.ps1"));
-    Assert(packageScript.Contains("[string]$Version = \"1.1.4\"", StringComparison.Ordinal),
-        "配布スクリプトの既定バージョンが1.1.4ではありません。");
+    Assert(packageScript.Contains("[string]$Version = \"1.1.7\"", StringComparison.Ordinal),
+        "配布スクリプトの既定バージョンが1.1.7ではありません。");
     Assert(packageScript.Contains("SigningCertificateThumbprint", StringComparison.Ordinal) &&
            packageScript.Contains("AllowUnsigned", StringComparison.Ordinal) &&
            packageScript.Contains("A trusted code-signing certificate is required",
                StringComparison.Ordinal),
         "正式な配布物でコード署名を必須にする処理がありません。");
-    Assert(typeof(WinBridge.App).Assembly.GetName().Version == new Version(1, 1, 4, 0),
-        "アプリ本体のアセンブリバージョンが1.1.4.0ではありません。");
+    Assert(typeof(WinBridge.App).Assembly.GetName().Version == new Version(1, 1, 7, 0),
+        "アプリ本体のアセンブリバージョンが1.1.7.0ではありません。");
 }
 
 static async Task TestSingleInstanceAsync()
@@ -919,6 +1218,39 @@ sealed class TestAvailabilityService(bool conditionalAvailability) : ISettingAva
 {
     public bool IsAvailable(SettingAvailability availability) =>
         availability == SettingAvailability.Always || conditionalAvailability;
+}
+
+sealed class FakeExplorerSettingsAccessor : IExplorerSettingsAccessor
+{
+    public ExplorerSettingsSnapshot State { get; set; } = ExplorerSettingsSnapshot.FromSettings(false, false);
+    public List<(ExplorerValue Name, ExplorerRegistryValue? Value)> Writes { get; } = [];
+    public HashSet<int> FailOnWriteNumbers { get; } = [];
+    public HashSet<int> FailOnReadNumbers { get; } = [];
+    public int? DropWriteNumber { get; set; }
+    public int? FailOnNotificationNumber { get; set; }
+    public int ReadCount { get; private set; }
+    public int NotificationCount { get; private set; }
+
+    public ExplorerSettingsSnapshot Read()
+    {
+        if (FailOnReadNumbers.Contains(++ReadCount)) throw new IOException("Simulated read failure.");
+        return State;
+    }
+
+    public void WriteValue(ExplorerValue name, ExplorerRegistryValue? value)
+    {
+        Writes.Add((name, value));
+        if (FailOnWriteNumbers.Contains(Writes.Count)) throw new IOException("Simulated write failure.");
+        if (DropWriteNumber == Writes.Count) return;
+        State = name == ExplorerValue.HideFileExt
+            ? State with { HideFileExt = value }
+            : State with { Hidden = value };
+    }
+
+    public void NotifyShell()
+    {
+        if (++NotificationCount == FailOnNotificationNumber) throw new IOException("Simulated notification failure.");
+    }
 }
 
 sealed class FakePowerPolicyAccessor : IPowerPolicyAccessor
