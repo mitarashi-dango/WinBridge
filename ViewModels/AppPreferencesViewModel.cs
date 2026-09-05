@@ -29,13 +29,15 @@ public sealed class AppPreferencesViewModel : ObservableObject
 
     public AsyncRelayCommand SaveCommand { get; }
     public RelayCommand OpenSupportPageCommand { get; }
+    public AppUpdateViewModel Updates { get; }
 
     public AppPreferencesViewModel(ModuleService modules, ExternalLinkService externalLinks,
-        Action<OperationResult> report)
+        Action<OperationResult> report, AppUpdateViewModel updates)
     {
         _modules = modules;
         _externalLinks = externalLinks;
         _report = report;
+        Updates = updates;
         SelectedLanguage = Languages.FirstOrDefault(option =>
                                string.Equals(option.Value, modules.Settings.Language,
                                    StringComparison.OrdinalIgnoreCase))

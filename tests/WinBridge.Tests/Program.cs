@@ -7,6 +7,11 @@ using WinBridge.Localization;
 
 var tests = new (string Name, Func<Task> Run)[]
 {
+    ("更新のバージョン比較と公開先を検証する", AppUpdateTests.VersionsAsync),
+    ("更新APIの通信失敗・タイムアウト・再試行を扱う", AppUpdateTests.NetworkAsync),
+    ("Store版の更新確認をStoreだけに限定する", AppUpdateTests.StoreAsync),
+    ("自動確認の保存と更新通知の表示・解除を行う", AppUpdateTests.PreferencesAndNotificationsAsync),
+    ("更新確認の重複実行と終了時の通知を防ぐ", AppUpdateTests.ConcurrentAndCanceledAsync),
     ("設定Versionを段階的に移行できる", TestMigrationAsync),
     ("デバイスページを空にした設定を維持する", TestEmptyDevicePageMigrationAsync),
     ("新しいVersionを誤って上書きしない", TestFutureVersionAsync),
@@ -244,6 +249,8 @@ static async Task TestXamlTranslationsAsync()
                  "Services/PowerSettingsService.cs",
                  "Services/PowerPresetService.cs",
                  "Services/ExplorerSettingsService.cs",
+                 "Services/ExternalLinkService.cs",
+                 "ViewModels/AppUpdateViewModel.cs",
                  "ViewModels/PowerViewModel.cs"
              })
     {
@@ -545,6 +552,21 @@ static async Task TestModuleVisibilityAsync()
         var settings = new AppSettings();
         var modules = new ModuleService(settingsService, settings, logger);
         await modules.LoadDefinitionsAsync();
+
+        Assert(modules.Modules.Where(module => module.IsVisible).Select(module => module.Id)
+            .SequenceEqual(new[] { "power", "windows-update", "search", "explorer", "devices" }),
+            "初期状態で5種類すべての機能が表示されていません。");
+        Assert(settings.Settings.Count == 0,
+            "初期状態でWindows設定が追加されています。");
+
+        foreach (var module in modules.Modules)
+            module.IsVisible = true;
+        Assert((await modules.SaveAsync()).IsSuccess, "全機能の表示設定を保存できません。");
+        var existingSettings = await new AppSettingsService(logger, directory).LoadAsync();
+        var existingModules = new ModuleService(settingsService, existingSettings, logger);
+        await existingModules.LoadDefinitionsAsync();
+        Assert(existingModules.Modules.All(module => module.IsVisible),
+            "既存の表示設定が新しい初期設定で上書きされています。");
 
         foreach (var module in modules.Modules)
             module.IsVisible = false;

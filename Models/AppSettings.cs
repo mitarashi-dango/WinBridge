@@ -4,6 +4,7 @@ public sealed class AppSettings
 {
     public int Version { get; set; } = 7;
     public string Language { get; set; } = "system";
+    public bool CheckForUpdatesOnStartup { get; set; } = true;
     public List<ModulePreference> Modules { get; set; } = [];
     public List<SettingPreference> Settings { get; set; } = [];
     public List<string> DevicePageSettings { get; set; } = [];

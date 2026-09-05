@@ -43,6 +43,7 @@ public sealed class MainViewModel : ObservableObject
     public ModuleSettingsViewModel ModuleSettings { get; }
     public SettingsCatalogViewModel SettingsCatalog { get; }
     public AppPreferencesViewModel AppPreferences { get; }
+    public AppUpdateViewModel AppUpdates { get; }
 
     internal static string FormatVersion(Version? version) => version is null
         ? ""
@@ -52,7 +53,7 @@ public sealed class MainViewModel : ObservableObject
         DevicePageSettingsService devicePageSettings,
         PowerSettingsService power, PowerPresetService powerPreset, WindowsSettingsLauncher launcher,
         ExplorerSettingsService explorer, WindowsUpdateStatusService updateStatus, SearchStatusService searchStatus,
-        DeviceStatusService deviceStatus, ExternalLinkService externalLinks)
+        DeviceStatusService deviceStatus, ExternalLinkService externalLinks, AppUpdateService appUpdates)
     {
         _modules = modules;
         _settingCatalog = settingCatalog;
@@ -69,7 +70,8 @@ public sealed class MainViewModel : ObservableObject
         Devices = new DeviceViewModel(deviceStatus, devicePageSettings, launcher, Report);
         ModuleSettings = new ModuleSettingsViewModel(modules, RefreshNavigation, Report);
         SettingsCatalog = new SettingsCatalogViewModel(settingCatalog, RefreshSettings, Report);
-        AppPreferences = new AppPreferencesViewModel(modules, externalLinks, Report);
+        AppUpdates = new AppUpdateViewModel(modules, appUpdates, externalLinks, Report);
+        AppPreferences = new AppPreferencesViewModel(modules, externalLinks, Report, AppUpdates);
         _pages["home"] = Home;
         _pages["power"] = Power;
         _pages["windows-update"] = WindowsUpdate;

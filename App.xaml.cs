@@ -11,6 +11,7 @@ public partial class App : Application
     private SingleInstanceService? _singleInstance;
     private bool _allowWindowClose;
     private bool _isSavingOnClose;
+    private readonly CancellationTokenSource _shutdown = new();
 
     protected override async void OnStartup(StartupEventArgs e)
     {
@@ -55,7 +56,7 @@ public partial class App : Application
             new WindowsUpdateStatusService(_logger),
             new SearchStatusService(_logger),
             new DeviceStatusService(_logger),
-            new ExternalLinkService(_logger));
+            new ExternalLinkService(_logger), new AppUpdateService(_logger));
 
         var window = new MainWindow { DataContext = main };
         RestoreWindow(window, settings);
@@ -74,11 +75,14 @@ public partial class App : Application
             _allowWindowClose = true;
             window.Close();
         };
+        _ = main.AppUpdates.CheckAutomaticallyAsync(_shutdown.Token);
         await main.InitializeAsync();
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _shutdown.Cancel();
+        _shutdown.Dispose();
         _logger?.Info("アプリを終了しました。");
         _singleInstance?.Dispose();
         base.OnExit(e);
