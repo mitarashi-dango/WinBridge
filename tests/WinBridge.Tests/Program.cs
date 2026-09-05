@@ -1137,12 +1137,12 @@ static async Task TestReleaseHardeningAsync()
            installer.Contains("Name: \"chinesesimplified\"", StringComparison.Ordinal) &&
            installer.Contains("Name: \"chinesetraditional\"", StringComparison.Ordinal),
         "インストーラーに対応する5言語が登録されていません。");
-    Assert(installer.Contains("#define AppVersion \"1.1.6\"", StringComparison.Ordinal),
-        "インストーラーの既定バージョンが1.1.6ではありません。");
+    Assert(installer.Contains("#define AppVersion \"1.1.7\"", StringComparison.Ordinal),
+        "インストーラーの既定バージョンが1.1.7ではありません。");
 
     var manifest = await File.ReadAllTextAsync(Path.Combine(releaseFiles, "app.manifest"));
-    Assert(manifest.Contains("assemblyIdentity version=\"1.1.6.0\"", StringComparison.Ordinal),
-        "アプリマニフェストのバージョンが1.1.6.0ではありません。");
+    Assert(manifest.Contains("assemblyIdentity version=\"1.1.7.0\"", StringComparison.Ordinal),
+        "アプリマニフェストのバージョンが1.1.7.0ではありません。");
 
     var msixManifest = await File.ReadAllTextAsync(
         Path.Combine(releaseFiles, "AppxManifest.template.xml"));
@@ -1157,15 +1157,15 @@ static async Task TestReleaseHardeningAsync()
 
     var packageScript = await File.ReadAllTextAsync(
         Path.Combine(releaseFiles, "package-release.ps1"));
-    Assert(packageScript.Contains("[string]$Version = \"1.1.6\"", StringComparison.Ordinal),
-        "配布スクリプトの既定バージョンが1.1.6ではありません。");
+    Assert(packageScript.Contains("[string]$Version = \"1.1.7\"", StringComparison.Ordinal),
+        "配布スクリプトの既定バージョンが1.1.7ではありません。");
     Assert(packageScript.Contains("SigningCertificateThumbprint", StringComparison.Ordinal) &&
            packageScript.Contains("AllowUnsigned", StringComparison.Ordinal) &&
            packageScript.Contains("A trusted code-signing certificate is required",
                StringComparison.Ordinal),
         "正式な配布物でコード署名を必須にする処理がありません。");
-    Assert(typeof(WinBridge.App).Assembly.GetName().Version == new Version(1, 1, 6, 0),
-        "アプリ本体のアセンブリバージョンが1.1.6.0ではありません。");
+    Assert(typeof(WinBridge.App).Assembly.GetName().Version == new Version(1, 1, 7, 0),
+        "アプリ本体のアセンブリバージョンが1.1.7.0ではありません。");
 }
 
 static async Task TestSingleInstanceAsync()

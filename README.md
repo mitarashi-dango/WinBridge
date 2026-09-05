@@ -71,13 +71,13 @@ Microsoft Storeへ提出するMSIXは、Partner Centerの「製品 ID の管理�
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\package-msix.ps1 `
-  -Version 1.1.6.0 `
+  -Version 1.1.7.0 `
   -PackageIdentityName '<Partner CenterのPackage/Identity/Name>' `
   -Publisher '<Partner CenterのPackage/Identity/Publisher>' `
   -PublisherDisplayName '<Partner Centerの発行元表示名>'
 ```
 
-成果物は `WinBridge-msix-v1.1.6.0\WinBridge-v1.1.6.0-x64.msix` に作成されます。
+成果物は `WinBridge-msix-v1.1.7.0\WinBridge-v1.1.7.0-x64.msix` に作成されます。
 提出用MSIXは署名せずに生成し、Microsoft Storeが提出後に署名します。
 
 Microsoft Store版はパッケージ実行を自動判定し、エクスプローラーのレジストリを直接変更しません。
@@ -93,7 +93,7 @@ Inno Setup 6または7をインストールしたWindows環境では、次のコ
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\package-release.ps1 `
-  -Version 1.1.6 `
+  -Version 1.1.7 `
   -AllowUnsigned
 ```
 
@@ -101,11 +101,11 @@ powershell -ExecutionPolicy Bypass -File .\tools\package-release.ps1 `
 `-SigningCertificateThumbprint <証明書の拇印>` を指定できます。署名を省略する場合でも、
 成果物のファイル名は変わりません。
 
-成果物はプロジェクト直下の `WinBridge-release-v1.1.6` に作成されます。
+成果物はプロジェクト直下の `WinBridge-release-v1.1.7` に作成されます。
 
 ```text
-WinBridge-v1.1.6-win-x64-portable.zip
-WinBridge-v1.1.6-win-x64-Setup.exe
+WinBridge-v1.1.7-win-x64-portable.zip
+WinBridge-v1.1.7-win-x64-Setup.exe
 SHA256SUMS.txt
 ```
 
@@ -114,8 +114,8 @@ SHA256SUMS.txt
 ダウンロード後の整合性は次のように確認できます。
 
 ```powershell
-Get-FileHash .\WinBridge-v1.1.6-win-x64-portable.zip -Algorithm SHA256
-Get-FileHash .\WinBridge-v1.1.6-win-x64-Setup.exe -Algorithm SHA256
+Get-FileHash .\WinBridge-v1.1.7-win-x64-portable.zip -Algorithm SHA256
+Get-FileHash .\WinBridge-v1.1.7-win-x64-Setup.exe -Algorithm SHA256
 ```
 
 表示された値がGitHub Releaseに添付された `SHA256SUMS.txt` と一致することを確認してください。
@@ -146,6 +146,8 @@ dotnet run --project tests\WinBridge.Tests\WinBridge.Tests.csproj -c Release
 ### スタートと検索
 
 Windows検索、検索のアクセス許可、インデックス、スタート、既定のアプリ設定を開きます。Windows Searchサービスの状態を読み取り、よくある問題の安全な確認手順を表示します。自動再構築やサービス停止は行いません。
+
+「PC内を探したい」では、エクスプローラーの検索手順と、ファイル名で探すための無料ツール[Everything（voidtools）](https://www.voidtools.com/)を紹介します。ボタンは公式サイトをブラウザーで開くだけで、ソフトの同梱・自動インストールは行いません。他の検索トラブルとスタートの表示変更にはWindows標準の確認手順を案内します。
 
 ### エクスプローラー
 
