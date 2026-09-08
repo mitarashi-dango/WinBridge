@@ -1,6 +1,42 @@
-# WinBridge
+# WinBridge — Windows 11で自分好みのコントロールパネルを作る無料アプリ
 
-WinBridgeは、Windows 11の分散した設定を1か所から扱うための中継アプリです。安全に変更できる設定だけをアプリ内で変更し、それ以外はWindowsの正規設定画面へ案内します。
+[ダウンロード（最新版）](https://github.com/mitarashi-dango/WinBridge/releases/latest) · [English](README.en.md)
+
+WinBridgeは、よく使うWindows設定を選んで並べ、自分好みのコントロールパネルを作れるWindows 11向けの無料デスクトップアプリです。必要な設定の追加、使わない機能の非表示、並べ替え、お気に入り登録で、日々の使い方に合った設定画面を組み立てられます。
+
+Windows標準の設定画面へのショートカットと、画面・スリープ時間などの操作を、自分用のホームと左メニューにまとめます。安全に変更できる設定だけをアプリ内で変更し、それ以外はWindowsの正規設定画面へ案内します。
+
+WinBridge is a free Windows 11 app for building your own custom control panel. Choose Windows settings shortcuts, arrange them your way, hide unused modules, and keep favorites close at hand. Built with C# and WPF for Windows 11 x64. [Read the English overview and download instructions](README.en.md).
+
+## 自分用のコントロールパネルを作る
+
+1. **選ぶ：**「Windows設定を追加」で、音量・Bluetooth・マウスなど、必要な設定をカタログから追加します。
+2. **絞る：**「表示する機能」で使わない機能を隠し、追加した設定も不要になったら外せます。
+3. **並べる：** ドラッグまたは上下ボタンで、使いやすい順番に並べ替えます。
+4. **すぐ開く：**「★ 自分用」でよく使う項目をお気に入りにし、「左メニューに固定」でアクセスしやすくします。
+
+たとえば、オンライン会議で使うマイク・カメラ・音量設定や、普段よく変更するディスプレイ・Bluetooth設定を集められます。項目の選択や並び順は保存され、次回の起動時も自分用の構成を使えます。
+
+## WinBridgeでできること
+
+| やりたいこと | 機能 |
+| --- | --- |
+| 自分好みのコントロールパネルを作りたい | 設定の追加・取り外し、機能の表示切り替え、並べ替え、お気に入りでカスタマイズ |
+| 画面が消える時間やスリープ時間を変えたい | 電源接続時・バッテリー使用時の時間設定とプリセット |
+| Windows Updateの設定を開きたい | 更新確認・更新履歴・アクティブ時間などの標準設定画面へのショートカット |
+| 拡張子や隠しファイルを表示したい | エクスプローラーの表示設定。Store版はフォルダー オプションへ案内 |
+| Bluetooth・マウス・マイクの設定を探したい | デバイス設定へのショートカットを追加・整理 |
+
+## ダウンロードと使い始め方
+
+1. [WinBridgeの最新リリース](https://github.com/mitarashi-dango/WinBridge/releases/latest)を開きます。
+2. インストールする場合は `win-x64-Setup.exe`、インストールせず使う場合は `win-x64-portable.zip` で終わるファイルをダウンロードします。
+3. インストーラーを実行するか、ZIPを解凍して中の `WinBridge.exe` を起動します。
+4. 「Windows設定を追加」から必要な設定を選び、「★ 自分用」でお気に入りに登録します。
+
+対応OSはWindows 11 x64です。配布用EXE・ZIPには.NETランタイムを同梱しています。ダウンロードファイルの確認方法は、下の「EXEインストーラーとポータブルZIP」を参照してください。
+
+## 対応言語と料金
 
 表示言語は日本語、英語、スペイン語、簡体字中国語、繁体字中国語に対応しています。「アプリ設定」の「表示言語」から固定するか、Windowsの表示言語に合わせて自動選択できます。未対応のWindows表示言語では英語を使用します。
 
